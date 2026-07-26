@@ -247,18 +247,24 @@
     }
 
     ctx.save();
-    ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
+    // Each body link is stroked as its own independent capsule (round
+    // caps, no shared join) instead of one continuous multi-point path.
+    // A single path with lineJoin would need to bend its joint at every
+    // static point as the head/tail glide, which distorts (bulges or
+    // pinches) as the angle sweeps mid-turn. Independent round-capped
+    // segments overlap seamlessly at any angle since there's no join to
+    // compute at all.
     if (pts.length > 1) {
       ctx.strokeStyle = '#4caf50';
       ctx.lineWidth = cellPx * 0.72;
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (var i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
+      for (var i = 0; i < pts.length - 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(pts[i].x, pts[i].y);
+        ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
     var tail = pts[pts.length - 1];
