@@ -53,62 +53,9 @@
   var running = false;
   var paused = false;
   var loopHandle = null;
-  var particles = [];
-  var lastFrameTime = performance.now();
 
   function lerp(a, b, t) {
     return a + (b - a) * t;
-  }
-
-  var EXPLOSION_COLORS = ['#8bc34a', '#4caf50', '#ffeb3b', '#ffffff', '#ff9800'];
-
-  function spawnExplosion(cx, cy) {
-    var count = 26;
-    for (var i = 0; i < count; i++) {
-      var angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
-      var speed = cellPx * (2.5 + Math.random() * 3.5);
-      particles.push({
-        x: cx,
-        y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: cellPx * (0.14 + Math.random() * 0.16),
-        life: 0,
-        maxLife: 450 + Math.random() * 350,
-        color: EXPLOSION_COLORS[Math.floor(Math.random() * EXPLOSION_COLORS.length)],
-      });
-    }
-  }
-
-  function updateParticles(dt) {
-    if (particles.length === 0) return;
-    var seconds = dt / 1000;
-    for (var i = particles.length - 1; i >= 0; i--) {
-      var p = particles[i];
-      p.life += dt;
-      if (p.life >= p.maxLife) {
-        particles.splice(i, 1);
-        continue;
-      }
-      p.x += p.vx * seconds;
-      p.y += p.vy * seconds;
-      p.vx *= 0.92;
-      p.vy *= 0.92;
-    }
-  }
-
-  function drawParticles() {
-    if (particles.length === 0) return;
-    particles.forEach(function (p) {
-      var progress = p.life / p.maxLife;
-      ctx.globalAlpha = Math.max(0, 1 - progress);
-      ctx.fillStyle = p.color;
-      var s = Math.max(0, p.size * (1 - progress * 0.5));
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, s / 2, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1;
   }
 
   function cloneSnake(list) {
@@ -175,7 +122,6 @@
     lastTickTime = performance.now();
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
-    particles = [];
     score = 0;
     scoreEl.textContent = score;
     placeFood();
@@ -202,7 +148,7 @@
       newHead.y >= GRID_SIZE ||
       snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })
     ) {
-      gameOver(newHead);
+      gameOver();
       return;
     }
 
@@ -251,17 +197,11 @@
     } else {
       drawPixelSnake();
     }
-
-    drawParticles();
   }
 
   function animate() {
     requestAnimationFrame(animate);
-    var now = performance.now();
-    var dt = now - lastFrameTime;
-    lastFrameTime = now;
-    updateParticles(dt);
-    var t = TICK_MS > 0 ? Math.min(1, Math.max(0, (now - lastTickTime) / TICK_MS)) : 1;
+    var t = TICK_MS > 0 ? Math.min(1, Math.max(0, (performance.now() - lastTickTime) / TICK_MS)) : 1;
     if (paused || !running) t = 1;
     renderFrame(t);
   }
@@ -433,14 +373,9 @@
     }, COUNTDOWN_TICK_MS);
   }
 
-  function gameOver(impactCell) {
+  function gameOver() {
     running = false;
     clearInterval(loopHandle);
-    var boomCell =
-      impactCell && impactCell.x >= 0 && impactCell.y >= 0 && impactCell.x < GRID_SIZE && impactCell.y < GRID_SIZE
-        ? impactCell
-        : snake[0];
-    spawnExplosion(boomCell.x * cellPx + cellPx / 2, boomCell.y * cellPx + cellPx / 2);
     overlayTitle.textContent = 'Game Over';
     overlayMessage.textContent = 'Score: ' + score + (score >= best ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
     startBtn.textContent = 'Play Again';
@@ -565,18 +500,6 @@
     },
     { passive: true }
   );
-
-  // requestAnimationFrame gets throttled or fully paused by the browser
-  // once the tab loses focus/visibility, but the setInterval driving game
-  // logic keeps ticking. Left alone, the snake can keep moving (and even
-  // crash) while the display is frozen on the last rendered frame, so it
-  // looks like it "isn't moving" until the tab regains focus. Auto-pause
-  // as soon as the tab is hidden so nothing advances while unseen.
-  document.addEventListener('visibilitychange', function () {
-    if (document.hidden && running && !paused) {
-      togglePause();
-    }
-  });
 
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('load', resizeCanvas);
