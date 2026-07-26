@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var SPEEDS = { slow: 180, normal: 150, fast: 120 };
+  var SPEEDS = { slow: 260, normal: 180, fast: 120 };
   var GRID_SIZES = { small: 14, medium: 20, large: 26 };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
