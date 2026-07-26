@@ -43,6 +43,8 @@
   var cellPx = 0;
   var countdownTimer = null;
   var snake = [];
+  var previousSnake = [];
+  var lastTickTime = 0;
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
   var food = { x: 0, y: 0 };
@@ -51,6 +53,16 @@
   var running = false;
   var paused = false;
   var loopHandle = null;
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function cloneSnake(list) {
+    return list.map(function (s) {
+      return { x: s.x, y: s.y };
+    });
+  }
 
   bestScoreEl.textContent = best;
 
@@ -101,6 +113,8 @@
       { x: mid - 2, y: mid },
       { x: mid - 3, y: mid },
     ];
+    previousSnake = cloneSnake(snake);
+    lastTickTime = performance.now();
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
     score = 0;
@@ -115,6 +129,9 @@
   }
 
   function step() {
+    previousSnake = cloneSnake(snake);
+    lastTickTime = performance.now();
+
     direction = pendingDirection;
     var head = snake[0];
     var newHead = { x: head.x + direction.x, y: head.y + direction.y };
@@ -144,11 +161,13 @@
     } else {
       snake.pop();
     }
-
-    draw();
   }
 
   function draw() {
+    renderFrame(1);
+  }
+
+  function renderFrame(t) {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
     for (var i = 0; i < GRID_SIZE; i++) {
@@ -169,10 +188,17 @@
     ctx.fill();
 
     if (skinKey === 'smooth') {
-      drawSmoothSnake();
+      drawSmoothSnake(t);
     } else {
       drawPixelSnake();
     }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = TICK_MS > 0 ? Math.min(1, (performance.now() - lastTickTime) / TICK_MS) : 1;
+    if (paused || !running) t = 1;
+    renderFrame(t);
   }
 
   function drawPixelSnake() {
@@ -189,17 +215,25 @@
     });
   }
 
-  function drawSmoothSnake() {
+  function drawSmoothSnake(t) {
     if (snake.length === 0) return;
 
-    var pts = snake.map(function (seg) {
-      return { x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 };
-    });
+    // Only the head actually travels between ticks; body segments are
+    // static footprints left behind by earlier head positions, so they
+    // render at their exact cell - interpolating them would (incorrectly)
+    // make the whole body appear to crawl forward like a conveyor belt.
+    var headPrev = previousSnake[0] || snake[0];
+    var headGx = lerp(headPrev.x, snake[0].x, t);
+    var headGy = lerp(headPrev.y, snake[0].y, t);
+
+    var pts = [{ x: headGx * cellPx + cellPx / 2, y: headGy * cellPx + cellPx / 2 }];
+    for (var i = 1; i < snake.length; i++) {
+      pts.push({ x: snake[i].x * cellPx + cellPx / 2, y: snake[i].y * cellPx + cellPx / 2 });
+    }
 
     ctx.save();
-    ctx.lineJoin = 'miter';
-    ctx.miterLimit = 2;
-    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
 
     if (pts.length > 1) {
       ctx.strokeStyle = '#4caf50';
@@ -415,4 +449,5 @@
   window.addEventListener('load', resizeCanvas);
   resizeCanvas();
   resetGame();
+  requestAnimationFrame(animate);
 })();
