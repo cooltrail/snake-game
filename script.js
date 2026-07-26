@@ -6,6 +6,9 @@
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
   var GRID_KEY = 'snake-grid';
+  var COUNTDOWN_KEY = 'snake-countdown';
+  var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
+  var COUNTDOWN_TICK_MS = 700;
 
   var canvas = document.getElementById('board');
   var ctx = canvas.getContext('2d');
@@ -18,6 +21,7 @@
   var dpadBtns = document.querySelectorAll('.dpad-btn');
   var settingsEl = document.getElementById('settings');
   var settingBtns = document.querySelectorAll('.setting-btn');
+  var countdownToggle = document.getElementById('countdown-toggle');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
@@ -27,7 +31,13 @@
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
 
+  countdownToggle.checked = localStorage.getItem(COUNTDOWN_KEY) === '1';
+  countdownToggle.addEventListener('change', function () {
+    localStorage.setItem(COUNTDOWN_KEY, countdownToggle.checked ? '1' : '0');
+  });
+
   var cellPx = 0;
+  var countdownTimer = null;
   var snake = [];
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
@@ -175,6 +185,34 @@
     loopHandle = setInterval(loop, TICK_MS);
   }
 
+  function beginPlay() {
+    if (!countdownToggle.checked) {
+      startGame();
+      return;
+    }
+
+    if (countdownTimer) clearInterval(countdownTimer);
+    settingsEl.classList.add('disabled');
+    startBtn.classList.add('hidden-btn');
+    overlayMessage.textContent = '';
+    overlayTitle.classList.add('countdown');
+
+    var i = 0;
+    overlayTitle.textContent = COUNTDOWN_STEPS[i];
+    countdownTimer = setInterval(function () {
+      i++;
+      if (i < COUNTDOWN_STEPS.length) {
+        overlayTitle.textContent = COUNTDOWN_STEPS[i];
+      } else {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        overlayTitle.classList.remove('countdown');
+        startBtn.classList.remove('hidden-btn');
+        startGame();
+      }
+    }, COUNTDOWN_TICK_MS);
+  }
+
   function gameOver() {
     running = false;
     clearInterval(loopHandle);
@@ -218,7 +256,7 @@
     if (running && paused) {
       togglePause();
     } else {
-      startGame();
+      beginPlay();
     }
   });
 
