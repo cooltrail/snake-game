@@ -3,9 +3,11 @@
 
   var SPEEDS = { slow: 260, normal: 180, fast: 120 };
   var GRID_SIZES = { small: 14, medium: 20, large: 26 };
+  var SKINS = { pixel: 1, smooth: 1 };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
   var GRID_KEY = 'snake-grid';
+  var SKIN_KEY = 'snake-skin';
   var COUNTDOWN_KEY = 'snake-countdown';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -25,8 +27,10 @@
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
+  var skinKey = localStorage.getItem(SKIN_KEY) || 'pixel';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
+  if (!SKINS[skinKey]) skinKey = 'pixel';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -50,10 +54,16 @@
 
   bestScoreEl.textContent = best;
 
+  var GROUP_VALUES = {
+    speed: function () { return speedKey; },
+    grid: function () { return gridKey; },
+    skin: function () { return skinKey; },
+  };
+
   function syncSettingButtons() {
     settingBtns.forEach(function (btn) {
       var group = btn.parentElement.dataset.setting;
-      var value = group === 'speed' ? speedKey : gridKey;
+      var value = GROUP_VALUES[group] ? GROUP_VALUES[group]() : null;
       btn.classList.toggle('active', btn.dataset.value === value);
     });
   }
@@ -158,6 +168,14 @@
       : ctx.rect(food.x * cellPx + pad, food.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2);
     ctx.fill();
 
+    if (skinKey === 'smooth') {
+      drawSmoothSnake();
+    } else {
+      drawPixelSnake();
+    }
+  }
+
+  function drawPixelSnake() {
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
       ctx.fillStyle = idx === 0 ? '#8bc34a' : '#4caf50';
@@ -169,6 +187,57 @@
       }
       ctx.fill();
     });
+  }
+
+  function drawSmoothSnake() {
+    if (snake.length === 0) return;
+
+    var pts = snake.map(function (seg) {
+      return { x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 };
+    });
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    if (pts.length > 1) {
+      ctx.strokeStyle = '#4caf50';
+      ctx.lineWidth = cellPx * 0.72;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (var i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+      }
+      ctx.stroke();
+    }
+
+    var tail = pts[pts.length - 1];
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.arc(tail.x, tail.y, cellPx * 0.36, 0, Math.PI * 2);
+    ctx.fill();
+
+    var head = pts[0];
+    ctx.fillStyle = '#8bc34a';
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, cellPx * 0.44, 0, Math.PI * 2);
+    ctx.fill();
+
+    var perpX = -direction.y;
+    var perpY = direction.x;
+    var eyeForwardX = direction.x * cellPx * 0.14;
+    var eyeForwardY = direction.y * cellPx * 0.14;
+    var eyeSide = cellPx * 0.17;
+    ctx.fillStyle = '#0b1f0e';
+    [1, -1].forEach(function (side) {
+      var ex = head.x + eyeForwardX + perpX * eyeSide * side;
+      var ey = head.y + eyeForwardY + perpY * eyeSide * side;
+      ctx.beginPath();
+      ctx.arc(ex, ey, cellPx * 0.075, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
   }
 
   function loop() {
@@ -241,11 +310,14 @@
         speedKey = btn.dataset.value;
         TICK_MS = SPEEDS[speedKey];
         localStorage.setItem(SPEED_KEY, speedKey);
-      } else {
+      } else if (group === 'grid') {
         gridKey = btn.dataset.value;
         GRID_SIZE = GRID_SIZES[gridKey];
         localStorage.setItem(GRID_KEY, gridKey);
         resizeCanvas();
+      } else if (group === 'skin') {
+        skinKey = btn.dataset.value;
+        localStorage.setItem(SKIN_KEY, skinKey);
       }
       syncSettingButtons();
       resetGame();
