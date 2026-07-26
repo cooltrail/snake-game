@@ -337,7 +337,18 @@
   }
 
   function loop() {
-    if (!paused) step();
+    if (!paused) {
+      step();
+      // Don't rely solely on requestAnimationFrame to get a frame on
+      // screen - some browser/automation contexts throttle or fully
+      // suspend rAF (backgrounded tabs, headless environments, battery
+      // saver modes) while this setInterval keeps ticking regardless.
+      // Without this, the game logic keeps advancing invisibly and the
+      // board looks permanently frozen on its very first frame. Drawing
+      // directly after every tick guarantees the board always reflects
+      // the latest state at least once per tick, no matter what rAF does.
+      draw();
+    }
   }
 
   function startGame() {
