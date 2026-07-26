@@ -217,18 +217,28 @@
 
   function drawSmoothSnake(t) {
     if (snake.length === 0) return;
+    var prevLen = previousSnake.length;
 
-    // Only the head actually travels between ticks; body segments are
-    // static footprints left behind by earlier head positions, so they
-    // render at their exact cell - interpolating them would (incorrectly)
-    // make the whole body appear to crawl forward like a conveyor belt.
+    // Only the head and tail actually travel between ticks - the head
+    // advances into a new cell, and the tail retracts toward the body
+    // (or stays put if the snake just grew). Middle segments are static
+    // footprints left behind by earlier head positions, so interpolating
+    // them would incorrectly make the body crawl like a conveyor belt.
     var headPrev = previousSnake[0] || snake[0];
     var headGx = lerp(headPrev.x, snake[0].x, t);
     var headGy = lerp(headPrev.y, snake[0].y, t);
 
     var pts = [{ x: headGx * cellPx + cellPx / 2, y: headGy * cellPx + cellPx / 2 }];
     for (var i = 1; i < snake.length; i++) {
-      pts.push({ x: snake[i].x * cellPx + cellPx / 2, y: snake[i].y * cellPx + cellPx / 2 });
+      var seg = snake[i];
+      if (i === snake.length - 1 && snake.length > 1) {
+        var tailPrev = previousSnake[prevLen - 1] || seg;
+        var tailGx = lerp(tailPrev.x, seg.x, t);
+        var tailGy = lerp(tailPrev.y, seg.y, t);
+        pts.push({ x: tailGx * cellPx + cellPx / 2, y: tailGy * cellPx + cellPx / 2 });
+      } else {
+        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 });
+      }
     }
 
     ctx.save();
