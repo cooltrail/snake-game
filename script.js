@@ -218,6 +218,28 @@
       }
       ctx.fill();
     });
+
+    var head = snake[0];
+    var headCx = head.x * cellPx + cellPx / 2;
+    var headCy = head.y * cellPx + cellPx / 2;
+    var perpX = -direction.y;
+    var perpY = direction.x;
+    var eyeForwardX = direction.x * cellPx * 0.16;
+    var eyeForwardY = direction.y * cellPx * 0.16;
+    var eyeSide = cellPx * 0.18;
+    var eyeR = cellPx * 0.09;
+    ctx.fillStyle = '#0b1f0e';
+    [1, -1].forEach(function (side) {
+      var ex = headCx + eyeForwardX + perpX * eyeSide * side;
+      var ey = headCy + eyeForwardY + perpY * eyeSide * side;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(ex - eyeR, ey - eyeR, eyeR * 2, eyeR * 2, eyeR * 0.4);
+      } else {
+        ctx.rect(ex - eyeR, ey - eyeR, eyeR * 2, eyeR * 2);
+      }
+      ctx.fill();
+    });
   }
 
   function drawSmoothSnake(t) {
