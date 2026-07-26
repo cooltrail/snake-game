@@ -566,6 +566,18 @@
     { passive: true }
   );
 
+  // requestAnimationFrame gets throttled or fully paused by the browser
+  // once the tab loses focus/visibility, but the setInterval driving game
+  // logic keeps ticking. Left alone, the snake can keep moving (and even
+  // crash) while the display is frozen on the last rendered frame, so it
+  // looks like it "isn't moving" until the tab regains focus. Auto-pause
+  // as soon as the tab is hidden so nothing advances while unseen.
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && running && !paused) {
+      togglePause();
+    }
+  });
+
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('load', resizeCanvas);
   resizeCanvas();
