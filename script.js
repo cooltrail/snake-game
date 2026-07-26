@@ -113,10 +113,15 @@
 
   function resetGame() {
     var mid = Math.floor(GRID_SIZE / 2);
+    // The snake starts moving right immediately, so start it as close to
+    // the left edge as the body allows instead of dead center - that
+    // maximizes the runway before it's possible to run into the right
+    // wall (e.g. ~2s instead of ~1.2s at Fast speed on the medium grid).
+    var headX = 2;
     snake = [
-      { x: mid - 1, y: mid },
-      { x: mid - 2, y: mid },
-      { x: mid - 3, y: mid },
+      { x: headX, y: mid },
+      { x: headX - 1, y: mid },
+      { x: headX - 2, y: mid },
     ];
     previousSnake = cloneSnake(snake);
     lastTickTime = performance.now();
@@ -500,21 +505,6 @@
     },
     { passive: true }
   );
-
-  window.__snakeDebug = function () {
-    return {
-      running: running,
-      paused: paused,
-      TICK_MS: TICK_MS,
-      GRID_SIZE: GRID_SIZE,
-      cellPx: cellPx,
-      hasLoopHandle: !!loopHandle,
-      snake: snake,
-      direction: direction,
-      canvasClientWidth: canvas.clientWidth,
-      canvasClientHeight: canvas.clientHeight,
-    };
-  };
 
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('load', resizeCanvas);
