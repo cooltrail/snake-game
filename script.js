@@ -501,6 +501,21 @@
     { passive: true }
   );
 
+  window.__snakeDebug = function () {
+    return {
+      running: running,
+      paused: paused,
+      TICK_MS: TICK_MS,
+      GRID_SIZE: GRID_SIZE,
+      cellPx: cellPx,
+      hasLoopHandle: !!loopHandle,
+      snake: snake,
+      direction: direction,
+      canvasClientWidth: canvas.clientWidth,
+      canvasClientHeight: canvas.clientHeight,
+    };
+  };
+
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('load', resizeCanvas);
   resizeCanvas();
