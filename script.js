@@ -237,21 +237,22 @@
     for (var i = 1; i < snake.length; i++) {
       var seg = snake[i];
       if (i === snake.length - 1 && snake.length > 1) {
+        // The tail retracts from its old cell (tailPrev) to its resting
+        // cell (seg) - always a single grid step, since consecutive body
+        // cells are always chain-adjacent. But the static neighbor ahead
+        // of the tail can only ever be safely connected straight to the
+        // tail's *resting* cell (seg) - the neighbor and seg are also
+        // always chain-adjacent, whereas the neighbor and the tail's OLD
+        // cell are only adjacent on a straight run and diagonal across a
+        // corner. So draw the resting cell (seg) as a fixed pivot first,
+        // then animate the actual tail tip retracting from tailPrev into
+        // that pivot. Each leg individually always lands on a single grid
+        // axis, however the corner sits, and the tail still visibly
+        // glides every tick instead of jumping.
         var tailPrev = previousSnake[prevLen - 1] || seg;
-        var neighbor = snake[i - 1];
-        // The tail's glide starts at its old cell and ends at its new
-        // cell (always adjacent to `neighbor`, since consecutive body
-        // cells are always one grid step apart). But if a turn sits
-        // right where the tail is retracting through, the tail's OLD
-        // cell can be diagonal to `neighbor` (they were never actually
-        // next to each other - a corner cell used to sit between them).
-        // Sweeping the connector through that would flash a 45-degree
-        // edge. Snap the tail straight to its resting cell for this
-        // tick instead of animating through the bend.
-        var turnsThroughBend = tailPrev.x !== neighbor.x && tailPrev.y !== neighbor.y;
-        var tailT = turnsThroughBend ? 1 : t;
-        var tailGx = lerp(tailPrev.x, seg.x, tailT);
-        var tailGy = lerp(tailPrev.y, seg.y, tailT);
+        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 });
+        var tailGx = lerp(tailPrev.x, seg.x, t);
+        var tailGy = lerp(tailPrev.y, seg.y, t);
         pts.push({ x: tailGx * cellPx + cellPx / 2, y: tailGy * cellPx + cellPx / 2 });
       } else {
         pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 });
