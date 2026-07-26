@@ -123,6 +123,54 @@ html, body {
   max-width: 280px;
 }
 
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.setting-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.setting-options {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.setting-btn {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #2f332f;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.setting-btn.active {
+  background: var(--accent);
+  color: #0b1f0e;
+  font-weight: 700;
+  border-color: var(--accent);
+}
+
+.settings.disabled {
+  display: none;
+}
+
 .primary-btn {
   background: var(--accent);
   color: #0b1f0e;

@@ -1,9 +1,11 @@
 (function () {
   'use strict';
 
-  var GRID_SIZE = 20;
-  var TICK_MS = 120;
+  var SPEEDS = { slow: 180, normal: 150, fast: 120 };
+  var GRID_SIZES = { small: 14, medium: 20, large: 26 };
   var BEST_KEY = 'snake-best-score';
+  var SPEED_KEY = 'snake-speed';
+  var GRID_KEY = 'snake-grid';
 
   var canvas = document.getElementById('board');
   var ctx = canvas.getContext('2d');
@@ -14,6 +16,16 @@
   var overlayMessage = document.getElementById('overlay-message');
   var startBtn = document.getElementById('start-btn');
   var dpadBtns = document.querySelectorAll('.dpad-btn');
+  var settingsEl = document.getElementById('settings');
+  var settingBtns = document.querySelectorAll('.setting-btn');
+
+  var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
+  var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
+  if (!SPEEDS[speedKey]) speedKey = 'fast';
+  if (!GRID_SIZES[gridKey]) gridKey = 'medium';
+
+  var GRID_SIZE = GRID_SIZES[gridKey];
+  var TICK_MS = SPEEDS[speedKey];
 
   var cellPx = 0;
   var snake = [];
@@ -27,6 +39,15 @@
   var loopHandle = null;
 
   bestScoreEl.textContent = best;
+
+  function syncSettingButtons() {
+    settingBtns.forEach(function (btn) {
+      var group = btn.parentElement.dataset.setting;
+      var value = group === 'speed' ? speedKey : gridKey;
+      btn.classList.toggle('active', btn.dataset.value === value);
+    });
+  }
+  syncSettingButtons();
 
   function resizeCanvas() {
     var size = canvas.clientWidth;
@@ -149,6 +170,7 @@
     running = true;
     paused = false;
     overlay.classList.add('hidden');
+    settingsEl.classList.add('disabled');
     if (loopHandle) clearInterval(loopHandle);
     loopHandle = setInterval(loop, TICK_MS);
   }
@@ -159,6 +181,7 @@
     overlayTitle.textContent = 'Game Over';
     overlayMessage.textContent = 'Score: ' + score + (score >= best ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
     startBtn.textContent = 'Play Again';
+    settingsEl.classList.remove('disabled');
     overlay.classList.remove('hidden');
   }
 
@@ -168,8 +191,28 @@
     overlayTitle.textContent = paused ? 'Paused' : '';
     overlayMessage.textContent = paused ? 'Press space or tap Resume to continue.' : '';
     startBtn.textContent = paused ? 'Resume' : 'Play';
+    settingsEl.classList.toggle('disabled', paused);
     overlay.classList.toggle('hidden', !paused);
   }
+
+  settingBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (running && !paused) return;
+      var group = btn.parentElement.dataset.setting;
+      if (group === 'speed') {
+        speedKey = btn.dataset.value;
+        TICK_MS = SPEEDS[speedKey];
+        localStorage.setItem(SPEED_KEY, speedKey);
+      } else {
+        gridKey = btn.dataset.value;
+        GRID_SIZE = GRID_SIZES[gridKey];
+        localStorage.setItem(GRID_KEY, gridKey);
+        resizeCanvas();
+      }
+      syncSettingButtons();
+      resetGame();
+    });
+  });
 
   startBtn.addEventListener('click', function () {
     if (running && paused) {

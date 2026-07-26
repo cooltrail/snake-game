@@ -31,6 +31,26 @@
         <div class="overlay-card">
           <h2 id="overlay-title">Snake</h2>
           <p id="overlay-message">Use arrow keys, WASD, or swipe/tap the pad below to play.</p>
+
+          <div id="settings" class="settings">
+            <div class="setting-group">
+              <span class="setting-label">Speed</span>
+              <div class="setting-options" data-setting="speed">
+                <button class="setting-btn" data-value="slow">Slow</button>
+                <button class="setting-btn" data-value="normal">Normal</button>
+                <button class="setting-btn active" data-value="fast">Fast</button>
+              </div>
+            </div>
+            <div class="setting-group">
+              <span class="setting-label">Grid size</span>
+              <div class="setting-options" data-setting="grid">
+                <button class="setting-btn" data-value="small">Small</button>
+                <button class="setting-btn active" data-value="medium">Medium</button>
+                <button class="setting-btn" data-value="large">Large</button>
+              </div>
+            </div>
+          </div>
+
           <button id="start-btn" class="primary-btn">Play</button>
         </div>
       </div>
