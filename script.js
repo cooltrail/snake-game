@@ -197,8 +197,9 @@
     });
 
     ctx.save();
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 2;
+    ctx.lineCap = 'butt';
 
     if (pts.length > 1) {
       ctx.strokeStyle = '#4caf50';
