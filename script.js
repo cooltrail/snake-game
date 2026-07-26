@@ -88,6 +88,11 @@
     canvas.height = size * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     cellPx = size / GRID_SIZE;
+    // A resize (e.g. mobile address bar showing/hiding mid-game) rescales
+    // every rendered coordinate uniformly. Cut any in-flight glide short so
+    // there's nothing left interpolating across the rescale.
+    previousSnake = cloneSnake(snake);
+    lastTickTime = performance.now();
     draw();
   }
 
@@ -196,7 +201,7 @@
 
   function animate() {
     requestAnimationFrame(animate);
-    var t = TICK_MS > 0 ? Math.min(1, (performance.now() - lastTickTime) / TICK_MS) : 1;
+    var t = TICK_MS > 0 ? Math.min(1, Math.max(0, (performance.now() - lastTickTime) / TICK_MS)) : 1;
     if (paused || !running) t = 1;
     renderFrame(t);
   }
