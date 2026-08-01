@@ -92,12 +92,15 @@
     );
   }
 
-  function shadeAt(theme, t) {
-    // Smoothstep + a shorter blend range keeps the fade gradual so
-    // adjacent segments look closer instead of stripy.
+  function shadeAt(theme, t, length) {
+    // Short snakes only use a tiny slice of the head->body range so they
+    // stay smooth (no harsh banding). Longer snakes open the range up
+    // gradually - but the tip still never reaches the darkest body shade.
+    var len = Math.max(1, length || snake.length);
+    var maxBlend = Math.min(0.55, 0.12 + (len - 1) * 0.035);
     var x = Math.min(1, Math.max(0, t));
     var eased = x * x * (3 - 2 * x);
-    return lerpColor(theme.head, theme.body, eased * 0.72);
+    return lerpColor(theme.head, theme.body, eased * maxBlend);
   }
 
   function currentTheme() {
@@ -263,7 +266,7 @@
     var lastIdx = Math.max(1, snake.length - 1);
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
-      ctx.fillStyle = shadeAt(theme, idx / lastIdx);
+      ctx.fillStyle = shadeAt(theme, idx / lastIdx, snake.length);
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(seg.x * cellPx + p, seg.y * cellPx + p, cellPx - p * 2, cellPx - p * 2, 5);
@@ -351,7 +354,7 @@
     if (pts.length > 1) {
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
-        ctx.strokeStyle = shadeAt(theme, i / lastPt);
+        ctx.strokeStyle = shadeAt(theme, i / lastPt, snake.length);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
         ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
@@ -360,7 +363,7 @@
     }
 
     var tail = pts[pts.length - 1];
-    ctx.fillStyle = theme.body;
+    ctx.fillStyle = shadeAt(theme, 1, snake.length);
     ctx.beginPath();
     ctx.arc(tail.x, tail.y, cellPx * 0.36, 0, Math.PI * 2);
     ctx.fill();
