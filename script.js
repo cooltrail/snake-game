@@ -8,10 +8,12 @@
   // one just defines a gradient (head color -> tail color) applied along
   // the body, plus a matching eye color, so any theme works with either
   // skin.
+  // Soft head->tail spans (closer endpoints than a hard contrast) so
+  // short snakes still look smooth instead of banding after 2-3 segments.
   var COLOR_THEMES = {
-    default: { head: '#8bc34a', tail: '#2e7d32', eye: '#0b1f0e' },
-    frost: { head: '#e3f2fd', tail: '#1565c0', eye: '#0d2b45' },
-    scorch: { head: '#ff7043', tail: '#1a1a1a', eye: '#000000' },
+    default: { head: '#8bc34a', tail: '#4caf50', eye: '#0b1f0e' },
+    frost: { head: '#e8f4fc', tail: '#64b5f6', eye: '#0d2b45' },
+    scorch: { head: '#ff8a65', tail: '#bf360c', eye: '#1a0a00' },
   };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
@@ -91,6 +93,13 @@
       Math.round(lerp(a.b, b.b, t)) +
       ')'
     );
+  }
+
+  // Ease the blend so most of the body stays near the head shade and the
+  // fade into the tip is gradual (less stripy than a linear lerp).
+  function shadeAt(theme, t) {
+    var eased = Math.pow(Math.min(1, Math.max(0, t)), 0.55);
+    return lerpColor(theme.head, theme.tail, eased);
   }
 
   function currentTheme() {
@@ -256,7 +265,7 @@
     var lastIdx = Math.max(1, snake.length - 1);
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
-      ctx.fillStyle = lerpColor(theme.head, theme.tail, idx / lastIdx);
+      ctx.fillStyle = shadeAt(theme, idx / lastIdx);
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(seg.x * cellPx + p, seg.y * cellPx + p, cellPx - p * 2, cellPx - p * 2, 5);
@@ -344,7 +353,7 @@
     if (pts.length > 1) {
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
-        ctx.strokeStyle = lerpColor(theme.head, theme.tail, i / lastPt);
+        ctx.strokeStyle = shadeAt(theme, i / lastPt);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
         ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
