@@ -10,7 +10,7 @@
   var COLOR_THEMES = {
     default: { head: '#7cb342', body: '#2e7d32', eye: '#0b1f0e' },
     frost: { head: '#90caf9', body: '#1565c0', eye: '#0d2b45' },
-    scorch: { head: '#ef5350', body: '#b71c1c', eye: '#1a0a00' },
+    scorch: { head: '#ff8a50', body: '#e65100', eye: '#1a0a00' },
   };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
