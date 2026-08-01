@@ -12,11 +12,19 @@
     frost: { head: '#90caf9', body: '#1565c0', eye: '#0d2b45' },
     scorch: { head: '#ff6b35', body: '#c43e00', eye: '#1a0800' },
   };
+  // Checkerboard cell tints for the board (independent of snake color).
+  var GRID_COLORS = {
+    default: { a: 'rgba(255,255,255,0.02)', b: 'rgba(0,0,0,0)' },
+    red: { a: 'rgba(244,67,54,0.16)', b: 'rgba(244,67,54,0.05)' },
+    blue: { a: 'rgba(33,150,243,0.16)', b: 'rgba(33,150,243,0.05)' },
+    green: { a: 'rgba(76,175,80,0.16)', b: 'rgba(76,175,80,0.05)' },
+  };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
   var GRID_KEY = 'snake-grid';
   var SKIN_KEY = 'snake-skin';
   var COLOR_KEY = 'snake-color';
+  var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -38,10 +46,12 @@
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
   var skinKey = localStorage.getItem(SKIN_KEY) || 'pixel';
   var colorKey = localStorage.getItem(COLOR_KEY) || 'default';
+  var gridColorKey = localStorage.getItem(GRID_COLOR_KEY) || 'default';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
   if (!COLOR_THEMES[colorKey]) colorKey = 'default';
+  if (!GRID_COLORS[gridColorKey]) gridColorKey = 'default';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -120,6 +130,7 @@
     grid: function () { return gridKey; },
     skin: function () { return skinKey; },
     color: function () { return colorKey; },
+    gridColor: function () { return gridColorKey; },
   };
 
   function syncSettingButtons() {
@@ -230,12 +241,11 @@
   function renderFrame(t) {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
+    var gridTint = GRID_COLORS[gridColorKey] || GRID_COLORS.default;
     for (var i = 0; i < GRID_SIZE; i++) {
       for (var j = 0; j < GRID_SIZE; j++) {
-        if ((i + j) % 2 === 0) {
-          ctx.fillStyle = 'rgba(255,255,255,0.02)';
-          ctx.fillRect(i * cellPx, j * cellPx, cellPx, cellPx);
-        }
+        ctx.fillStyle = (i + j) % 2 === 0 ? gridTint.a : gridTint.b;
+        ctx.fillRect(i * cellPx, j * cellPx, cellPx, cellPx);
       }
     }
 
@@ -483,6 +493,9 @@
       } else if (group === 'color') {
         colorKey = btn.dataset.value;
         localStorage.setItem(COLOR_KEY, colorKey);
+      } else if (group === 'gridColor') {
+        gridColorKey = btn.dataset.value;
+        localStorage.setItem(GRID_COLOR_KEY, gridColorKey);
       }
       syncSettingButtons();
       resetGame();
