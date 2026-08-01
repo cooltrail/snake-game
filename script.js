@@ -5,12 +5,11 @@
   var GRID_SIZES = { small: 14, medium: 20, large: 26 };
   var SKINS = { pixel: 1, smooth: 1 };
   // Color themes are independent of the shape skin (Pixel/Smooth). Each
-  // theme is just a solid head + body pair (like the original green
-  // snake) - no gradient along the length.
+  // theme defines a head -> body gradient along the snake, plus eyes.
   var COLOR_THEMES = {
-    default: { head: '#8bc34a', body: '#4caf50', eye: '#0b1f0e' },
-    frost: { head: '#e3f2fd', body: '#64b5f6', eye: '#0d2b45' },
-    scorch: { head: '#ff7043', body: '#c62828', eye: '#1a0a00' },
+    default: { head: '#8bc34a', body: '#2e7d32', eye: '#0b1f0e' },
+    frost: { head: '#e3f2fd', body: '#1565c0', eye: '#0d2b45' },
+    scorch: { head: '#ff7043', body: '#1a1a1a', eye: '#1a0a00' },
   };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
