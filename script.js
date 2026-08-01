@@ -2,7 +2,7 @@
   'use strict';
 
   var SPEEDS = { slow: 260, normal: 180, fast: 120 };
-  var GRID_SIZES = { small: 20, medium: 28, large: 36 };
+  var GRID_SIZES = { small: 10, medium: 14, large: 18 };
   var SKINS = { pixel: 1, smooth: 1 };
   // Color themes are independent of the shape skin (Pixel/Smooth). Each
   // theme defines a head -> body gradient along the snake, plus eyes.
