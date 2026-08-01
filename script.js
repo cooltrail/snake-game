@@ -4,16 +4,13 @@
   var SPEEDS = { slow: 260, normal: 180, fast: 120 };
   var GRID_SIZES = { small: 14, medium: 20, large: 26 };
   var SKINS = { pixel: 1, smooth: 1 };
-  // Color themes are independent of the shape skin (Pixel/Smooth) - each
-  // one just defines a gradient (head color -> tail color) applied along
-  // the body, plus a matching eye color, so any theme works with either
-  // skin.
-  // Soft head->tail spans (closer endpoints than a hard contrast) so
-  // short snakes still look smooth instead of banding after 2-3 segments.
+  // Color themes are independent of the shape skin (Pixel/Smooth). Each
+  // theme is just a solid head + body pair (like the original green
+  // snake) - no gradient along the length.
   var COLOR_THEMES = {
-    default: { head: '#8bc34a', tail: '#4caf50', eye: '#0b1f0e' },
-    frost: { head: '#e8f4fc', tail: '#64b5f6', eye: '#0d2b45' },
-    scorch: { head: '#ff8a65', tail: '#bf360c', eye: '#1a0a00' },
+    default: { head: '#8bc34a', body: '#4caf50', eye: '#0b1f0e' },
+    frost: { head: '#e3f2fd', body: '#64b5f6', eye: '#0d2b45' },
+    scorch: { head: '#ff7043', body: '#c62828', eye: '#1a0a00' },
   };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
@@ -70,36 +67,6 @@
 
   function lerp(a, b, t) {
     return a + (b - a) * t;
-  }
-
-  function hexToRgb(hex) {
-    var h = hex.replace('#', '');
-    return {
-      r: parseInt(h.substring(0, 2), 16),
-      g: parseInt(h.substring(2, 4), 16),
-      b: parseInt(h.substring(4, 6), 16),
-    };
-  }
-
-  function lerpColor(hexA, hexB, t) {
-    var a = hexToRgb(hexA);
-    var b = hexToRgb(hexB);
-    return (
-      'rgb(' +
-      Math.round(lerp(a.r, b.r, t)) +
-      ',' +
-      Math.round(lerp(a.g, b.g, t)) +
-      ',' +
-      Math.round(lerp(a.b, b.b, t)) +
-      ')'
-    );
-  }
-
-  // Ease the blend so most of the body stays near the head shade and the
-  // fade into the tip is gradual (less stripy than a linear lerp).
-  function shadeAt(theme, t) {
-    var eased = Math.pow(Math.min(1, Math.max(0, t)), 0.55);
-    return lerpColor(theme.head, theme.tail, eased);
   }
 
   function currentTheme() {
@@ -262,10 +229,9 @@
 
   function drawPixelSnake() {
     var theme = currentTheme();
-    var lastIdx = Math.max(1, snake.length - 1);
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
-      ctx.fillStyle = shadeAt(theme, idx / lastIdx);
+      ctx.fillStyle = idx === 0 ? theme.head : theme.body;
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(seg.x * cellPx + p, seg.y * cellPx + p, cellPx - p * 2, cellPx - p * 2, 5);
@@ -346,14 +312,12 @@
     // static point as the head/tail glide, which distorts (bulges or
     // pinches) as the angle sweeps mid-turn. Independent round-capped
     // segments overlap seamlessly at any angle since there's no join to
-    // compute at all. Each capsule also gets its own color sampled along
-    // the theme's head->tail gradient, based on how far along the body it is.
+    // compute at all.
     var theme = currentTheme();
-    var lastPt = Math.max(1, pts.length - 1);
     if (pts.length > 1) {
+      ctx.strokeStyle = theme.body;
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
-        ctx.strokeStyle = shadeAt(theme, i / lastPt);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
         ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
@@ -362,7 +326,7 @@
     }
 
     var tail = pts[pts.length - 1];
-    ctx.fillStyle = theme.tail;
+    ctx.fillStyle = theme.body;
     ctx.beginPath();
     ctx.arc(tail.x, tail.y, cellPx * 0.36, 0, Math.PI * 2);
     ctx.fill();
