@@ -4,10 +4,20 @@
   var SPEEDS = { slow: 260, normal: 180, fast: 120 };
   var GRID_SIZES = { small: 14, medium: 20, large: 26 };
   var SKINS = { pixel: 1, smooth: 1 };
+  // Color themes are independent of the shape skin (Pixel/Smooth) - each
+  // one just defines a gradient (head color -> tail color) applied along
+  // the body, plus a matching eye color, so any theme works with either
+  // skin.
+  var COLOR_THEMES = {
+    default: { head: '#8bc34a', tail: '#2e7d32', eye: '#0b1f0e' },
+    frost: { head: '#e3f2fd', tail: '#1565c0', eye: '#0d2b45' },
+    scorch: { head: '#ff7043', tail: '#1a1a1a', eye: '#000000' },
+  };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
   var GRID_KEY = 'snake-grid';
   var SKIN_KEY = 'snake-skin';
+  var COLOR_KEY = 'snake-color';
   var COUNTDOWN_KEY = 'snake-countdown';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -28,9 +38,11 @@
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
   var skinKey = localStorage.getItem(SKIN_KEY) || 'pixel';
+  var colorKey = localStorage.getItem(COLOR_KEY) || 'default';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
+  if (!COLOR_THEMES[colorKey]) colorKey = 'default';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -58,6 +70,33 @@
     return a + (b - a) * t;
   }
 
+  function hexToRgb(hex) {
+    var h = hex.replace('#', '');
+    return {
+      r: parseInt(h.substring(0, 2), 16),
+      g: parseInt(h.substring(2, 4), 16),
+      b: parseInt(h.substring(4, 6), 16),
+    };
+  }
+
+  function lerpColor(hexA, hexB, t) {
+    var a = hexToRgb(hexA);
+    var b = hexToRgb(hexB);
+    return (
+      'rgb(' +
+      Math.round(lerp(a.r, b.r, t)) +
+      ',' +
+      Math.round(lerp(a.g, b.g, t)) +
+      ',' +
+      Math.round(lerp(a.b, b.b, t)) +
+      ')'
+    );
+  }
+
+  function currentTheme() {
+    return COLOR_THEMES[colorKey] || COLOR_THEMES.default;
+  }
+
   function cloneSnake(list) {
     return list.map(function (s) {
       return { x: s.x, y: s.y };
@@ -70,6 +109,7 @@
     speed: function () { return speedKey; },
     grid: function () { return gridKey; },
     skin: function () { return skinKey; },
+    color: function () { return colorKey; },
   };
 
   function syncSettingButtons() {
@@ -212,9 +252,11 @@
   }
 
   function drawPixelSnake() {
+    var theme = currentTheme();
+    var lastIdx = Math.max(1, snake.length - 1);
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
-      ctx.fillStyle = idx === 0 ? '#8bc34a' : '#4caf50';
+      ctx.fillStyle = lerpColor(theme.head, theme.tail, idx / lastIdx);
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(seg.x * cellPx + p, seg.y * cellPx + p, cellPx - p * 2, cellPx - p * 2, 5);
@@ -233,7 +275,7 @@
     var eyeForwardY = direction.y * cellPx * 0.16;
     var eyeSide = cellPx * 0.18;
     var eyeR = cellPx * 0.09;
-    ctx.fillStyle = '#0b1f0e';
+    ctx.fillStyle = theme.eye;
     [1, -1].forEach(function (side) {
       var ex = headCx + eyeForwardX + perpX * eyeSide * side;
       var ey = headCy + eyeForwardY + perpY * eyeSide * side;
@@ -295,11 +337,14 @@
     // static point as the head/tail glide, which distorts (bulges or
     // pinches) as the angle sweeps mid-turn. Independent round-capped
     // segments overlap seamlessly at any angle since there's no join to
-    // compute at all.
+    // compute at all. Each capsule also gets its own color sampled along
+    // the theme's head->tail gradient, based on how far along the body it is.
+    var theme = currentTheme();
+    var lastPt = Math.max(1, pts.length - 1);
     if (pts.length > 1) {
-      ctx.strokeStyle = '#4caf50';
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
+        ctx.strokeStyle = lerpColor(theme.head, theme.tail, i / lastPt);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
         ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
@@ -308,13 +353,13 @@
     }
 
     var tail = pts[pts.length - 1];
-    ctx.fillStyle = '#4caf50';
+    ctx.fillStyle = theme.tail;
     ctx.beginPath();
     ctx.arc(tail.x, tail.y, cellPx * 0.36, 0, Math.PI * 2);
     ctx.fill();
 
     var head = pts[0];
-    ctx.fillStyle = '#8bc34a';
+    ctx.fillStyle = theme.head;
     ctx.beginPath();
     ctx.arc(head.x, head.y, cellPx * 0.44, 0, Math.PI * 2);
     ctx.fill();
@@ -324,7 +369,7 @@
     var eyeForwardX = direction.x * cellPx * 0.14;
     var eyeForwardY = direction.y * cellPx * 0.14;
     var eyeSide = cellPx * 0.17;
-    ctx.fillStyle = '#0b1f0e';
+    ctx.fillStyle = theme.eye;
     [1, -1].forEach(function (side) {
       var ex = head.x + eyeForwardX + perpX * eyeSide * side;
       var ey = head.y + eyeForwardY + perpY * eyeSide * side;
@@ -425,6 +470,9 @@
       } else if (group === 'skin') {
         skinKey = btn.dataset.value;
         localStorage.setItem(SKIN_KEY, skinKey);
+      } else if (group === 'color') {
+        colorKey = btn.dataset.value;
+        localStorage.setItem(COLOR_KEY, colorKey);
       }
       syncSettingButtons();
       resetGame();
