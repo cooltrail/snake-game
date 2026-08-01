@@ -68,6 +68,34 @@
     return a + (b - a) * t;
   }
 
+  function hexToRgb(hex) {
+    var h = hex.replace('#', '');
+    return {
+      r: parseInt(h.substring(0, 2), 16),
+      g: parseInt(h.substring(2, 4), 16),
+      b: parseInt(h.substring(4, 6), 16),
+    };
+  }
+
+  function lerpColor(hexA, hexB, t) {
+    var a = hexToRgb(hexA);
+    var b = hexToRgb(hexB);
+    return (
+      'rgb(' +
+      Math.round(lerp(a.r, b.r, t)) +
+      ',' +
+      Math.round(lerp(a.g, b.g, t)) +
+      ',' +
+      Math.round(lerp(a.b, b.b, t)) +
+      ')'
+    );
+  }
+
+  function shadeAt(theme, t) {
+    var eased = Math.pow(Math.min(1, Math.max(0, t)), 0.55);
+    return lerpColor(theme.head, theme.body, eased);
+  }
+
   function currentTheme() {
     return COLOR_THEMES[colorKey] || COLOR_THEMES.default;
   }
@@ -228,9 +256,10 @@
 
   function drawPixelSnake() {
     var theme = currentTheme();
+    var lastIdx = Math.max(1, snake.length - 1);
     snake.forEach(function (seg, idx) {
       var p = cellPx * 0.08;
-      ctx.fillStyle = idx === 0 ? theme.head : theme.body;
+      ctx.fillStyle = shadeAt(theme, idx / lastIdx);
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(seg.x * cellPx + p, seg.y * cellPx + p, cellPx - p * 2, cellPx - p * 2, 5);
@@ -311,12 +340,14 @@
     // static point as the head/tail glide, which distorts (bulges or
     // pinches) as the angle sweeps mid-turn. Independent round-capped
     // segments overlap seamlessly at any angle since there's no join to
-    // compute at all.
+    // compute at all. Each capsule is colored along the theme's
+    // head -> body gradient based on how far down the snake it is.
     var theme = currentTheme();
+    var lastPt = Math.max(1, pts.length - 1);
     if (pts.length > 1) {
-      ctx.strokeStyle = theme.body;
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
+        ctx.strokeStyle = shadeAt(theme, i / lastPt);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
         ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
