@@ -93,8 +93,11 @@
   }
 
   function shadeAt(theme, t) {
-    var eased = Math.pow(Math.min(1, Math.max(0, t)), 0.55);
-    return lerpColor(theme.head, theme.body, eased);
+    // Smoothstep + a shorter blend range keeps the fade gradual so
+    // adjacent segments look closer instead of stripy.
+    var x = Math.min(1, Math.max(0, t));
+    var eased = x * x * (3 - 2 * x);
+    return lerpColor(theme.head, theme.body, eased * 0.72);
   }
 
   function currentTheme() {
