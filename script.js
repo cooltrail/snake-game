@@ -8,9 +8,9 @@
   // theme defines a head -> body gradient along the snake, plus eyes.
   // Softer head/body spans so neighboring segments don't jump as hard.
   var COLOR_THEMES = {
-    default: { head: '#9ccc65', body: '#43a047', eye: '#0b1f0e' },
-    frost: { head: '#e8f4fc', body: '#42a5f5', eye: '#0d2b45' },
-    scorch: { head: '#ff8a65', body: '#e53935', eye: '#1a0a00' },
+    default: { head: '#7cb342', body: '#2e7d32', eye: '#0b1f0e' },
+    frost: { head: '#90caf9', body: '#1565c0', eye: '#0d2b45' },
+    scorch: { head: '#ef5350', body: '#b71c1c', eye: '#1a0a00' },
   };
   var BEST_KEY = 'snake-best-score';
   var SPEED_KEY = 'snake-speed';
