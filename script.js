@@ -172,6 +172,10 @@
   }
 
   function placeFood() {
+    if (snake.length >= GRID_SIZE * GRID_SIZE) {
+      food = { x: -1, y: -1 };
+      return;
+    }
     var cell;
     do {
       cell = randomCell();
@@ -236,10 +240,10 @@
 
     snake.unshift(newHead);
 
-    if (newHead.x === food.x && newHead.y === food.y) {
+    if (food.x >= 0 && newHead.x === food.x && newHead.y === food.y) {
       score += 10;
       scoreEl.textContent = score;
-      if (score > best) {
+      if (!ez && score > best) {
         best = score;
         bestScoreEl.textContent = best;
         localStorage.setItem(BEST_KEY, String(best));
