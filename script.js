@@ -26,6 +26,7 @@
   var COLOR_KEY = 'snake-color';
   var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
+  var EZ_KEY = 'snake-ez';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
 
@@ -41,6 +42,7 @@
   var settingsEl = document.getElementById('settings');
   var settingBtns = document.querySelectorAll('.setting-btn');
   var countdownToggle = document.getElementById('countdown-toggle');
+  var ezToggle = document.getElementById('ez-toggle');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
@@ -59,6 +61,11 @@
   countdownToggle.checked = localStorage.getItem(COUNTDOWN_KEY) === '1';
   countdownToggle.addEventListener('change', function () {
     localStorage.setItem(COUNTDOWN_KEY, countdownToggle.checked ? '1' : '0');
+  });
+
+  ezToggle.checked = localStorage.getItem(EZ_KEY) === '1';
+  ezToggle.addEventListener('change', function () {
+    localStorage.setItem(EZ_KEY, ezToggle.checked ? '1' : '0');
   });
 
   var cellPx = 0;
@@ -207,15 +214,24 @@
     var head = snake[0];
     var newHead = { x: head.x + direction.x, y: head.y + direction.y };
 
-    if (
-      newHead.x < 0 ||
-      newHead.y < 0 ||
-      newHead.x >= GRID_SIZE ||
-      newHead.y >= GRID_SIZE ||
-      snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })
-    ) {
-      gameOver();
-      return;
+    var ez = ezToggle.checked;
+
+    if (ez) {
+      if (newHead.x < 0) newHead.x = GRID_SIZE - 1;
+      else if (newHead.x >= GRID_SIZE) newHead.x = 0;
+      if (newHead.y < 0) newHead.y = GRID_SIZE - 1;
+      else if (newHead.y >= GRID_SIZE) newHead.y = 0;
+    } else {
+      if (
+        newHead.x < 0 ||
+        newHead.y < 0 ||
+        newHead.x >= GRID_SIZE ||
+        newHead.y >= GRID_SIZE ||
+        snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })
+      ) {
+        gameOver();
+        return;
+      }
     }
 
     snake.unshift(newHead);
