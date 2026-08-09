@@ -86,6 +86,19 @@
     return a + (b - a) * t;
   }
 
+  function wrapLerp(prev, cur, t) {
+    var dx = cur - prev;
+    if (Math.abs(dx) > 1) {
+      var virtualPrev = cur - Math.sign(dx) * -1;
+      return lerp(virtualPrev, cur, t);
+    }
+    return lerp(prev, cur, t);
+  }
+
+  function isWrapPair(ax, ay, bx, by) {
+    return Math.abs(ax - bx) > 1 || Math.abs(ay - by) > 1;
+  }
+
   function hexToRgb(hex) {
     var h = hex.replace('#', '');
     return {
@@ -339,32 +352,20 @@
     // actually travel within a tick. Every other segment is a static
     // footprint, so it's drawn at its resting grid cell with no lerp.
     var headPrev = previousSnake[0] || snake[0];
-    var headGx = lerp(headPrev.x, snake[0].x, t);
-    var headGy = lerp(headPrev.y, snake[0].y, t);
+    var headGx = wrapLerp(headPrev.x, snake[0].x, t);
+    var headGy = wrapLerp(headPrev.y, snake[0].y, t);
 
-    var pts = [{ x: headGx * cellPx + cellPx / 2, y: headGy * cellPx + cellPx / 2 }];
+    var pts = [{ x: headGx * cellPx + cellPx / 2, y: headGy * cellPx + cellPx / 2, gx: headGx, gy: headGy }];
     for (var i = 1; i < snake.length; i++) {
       var seg = snake[i];
       if (i === snake.length - 1 && snake.length > 1) {
-        // The tail retracts from its old cell (tailPrev) to its resting
-        // cell (seg) - always a single grid step, since consecutive body
-        // cells are always chain-adjacent. But the static neighbor ahead
-        // of the tail can only ever be safely connected straight to the
-        // tail's *resting* cell (seg) - the neighbor and seg are also
-        // always chain-adjacent, whereas the neighbor and the tail's OLD
-        // cell are only adjacent on a straight run and diagonal across a
-        // corner. So draw the resting cell (seg) as a fixed pivot first,
-        // then animate the actual tail tip retracting from tailPrev into
-        // that pivot. Each leg individually always lands on a single grid
-        // axis, however the corner sits, and the tail still visibly
-        // glides every tick instead of jumping.
         var tailPrev = previousSnake[prevLen - 1] || seg;
-        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 });
-        var tailGx = lerp(tailPrev.x, seg.x, t);
-        var tailGy = lerp(tailPrev.y, seg.y, t);
-        pts.push({ x: tailGx * cellPx + cellPx / 2, y: tailGy * cellPx + cellPx / 2 });
+        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2, gx: seg.x, gy: seg.y });
+        var tailGx = wrapLerp(tailPrev.x, seg.x, t);
+        var tailGy = wrapLerp(tailPrev.y, seg.y, t);
+        pts.push({ x: tailGx * cellPx + cellPx / 2, y: tailGy * cellPx + cellPx / 2, gx: tailGx, gy: tailGy });
       } else {
-        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2 });
+        pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2, gx: seg.x, gy: seg.y });
       }
     }
 
@@ -384,6 +385,7 @@
     if (pts.length > 1) {
       ctx.lineWidth = cellPx * 0.72;
       for (var i = 0; i < pts.length - 1; i++) {
+        if (isWrapPair(pts[i].gx, pts[i].gy, pts[i + 1].gx, pts[i + 1].gy)) continue;
         ctx.strokeStyle = shadeAt(theme, i / lastPt, snake.length);
         ctx.beginPath();
         ctx.moveTo(pts[i].x, pts[i].y);
