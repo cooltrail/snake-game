@@ -265,6 +265,10 @@
         localStorage.setItem(BEST_KEY, String(best));
       }
       placeFood();
+      if (food.x < 0) {
+        gridWin();
+        return;
+      }
     } else {
       snake.pop();
     }
@@ -487,6 +491,75 @@
     startBtn.textContent = 'Play Again';
     settingsEl.classList.remove('disabled');
     overlay.classList.remove('hidden');
+  }
+
+  function gridWin() {
+    running = false;
+    clearInterval(loopHandle);
+
+    var particles = [];
+    var theme = currentTheme();
+    for (var i = 0; i < GRID_SIZE; i++) {
+      for (var j = 0; j < GRID_SIZE; j++) {
+        var t = (i * GRID_SIZE + j) / (GRID_SIZE * GRID_SIZE);
+        particles.push({
+          x: i * cellPx + cellPx / 2,
+          y: j * cellPx + cellPx / 2,
+          vx: (Math.random() - 0.5) * cellPx * 0.4,
+          vy: (Math.random() - 0.5) * cellPx * 0.4,
+          size: cellPx * 0.45,
+          color: shadeAt(theme, t, GRID_SIZE * GRID_SIZE),
+          alpha: 1,
+        });
+      }
+    }
+
+    var startTime = performance.now();
+    var duration = 1200;
+
+    function animateBlow(now) {
+      var elapsed = now - startTime;
+      var progress = Math.min(1, elapsed / duration);
+
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+      var gridTint = GRID_COLORS[gridColorKey] || GRID_COLORS.default;
+      for (var i = 0; i < GRID_SIZE; i++) {
+        for (var j = 0; j < GRID_SIZE; j++) {
+          ctx.fillStyle = (i + j) % 2 === 0 ? gridTint.a : gridTint.b;
+          ctx.fillRect(i * cellPx, j * cellPx, cellPx, cellPx);
+        }
+      }
+
+      particles.forEach(function (p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 1.02;
+        p.vy *= 1.02;
+        p.alpha = 1 - progress;
+        p.size *= 0.995;
+
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalAlpha = 1;
+
+      if (progress < 1) {
+        requestAnimationFrame(animateBlow);
+      } else {
+        overlayTitle.textContent = 'You Win!';
+        overlayMessage.textContent = 'Score: ' + score + ' \u2014 Grid Complete!';
+        startBtn.textContent = 'Play Again';
+        settingsEl.classList.remove('disabled');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    requestAnimationFrame(animateBlow);
   }
 
   function togglePause() {
