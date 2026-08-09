@@ -185,14 +185,17 @@
   }
 
   function placeFood() {
-    if (snake.length >= GRID_SIZE * GRID_SIZE) {
+    var occupied = {};
+    snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
+    var totalCells = GRID_SIZE * GRID_SIZE;
+    if (Object.keys(occupied).length >= totalCells) {
       food = { x: -1, y: -1 };
       return;
     }
     var cell;
     do {
       cell = randomCell();
-    } while (snake.some(function (s) { return s.x === cell.x && s.y === cell.y; }));
+    } while (occupied[cell.x + ',' + cell.y]);
     food = cell;
   }
 
