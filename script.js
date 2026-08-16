@@ -82,6 +82,89 @@
   var paused = false;
   var loopHandle = null;
 
+  // --- Arcade Sound Effects (Web Audio API, no files needed) ---
+  var audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playEatSound() {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.12);
+  }
+
+  function playDieSound() {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  }
+
+  function playWinSound() {
+    var ctx = getAudioCtx();
+    var notes = [523, 659, 784, 1047];
+    notes.forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.2);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.2);
+    });
+  }
+
+  function playCountdownBeep(final) {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(final ? 880 : 440, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.1);
+  }
+
+  function playTurnSound() {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.03);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.04);
+  }
+
   function lerp(a, b, t) {
     return a + (b - a) * t;
   }
@@ -223,6 +306,8 @@
 
   function setDirection(x, y) {
     if (direction.x === -x && direction.y === -y) return;
+    if (direction.x === x && direction.y === y) return;
+    playTurnSound();
     pendingDirection = { x: x, y: y };
   }
 
@@ -257,6 +342,7 @@
     snake.unshift(newHead);
 
     if (food.x >= 0 && newHead.x === food.x && newHead.y === food.y) {
+      playEatSound();
       score += 10;
       scoreEl.textContent = score;
       if (!ez && score > best) {
@@ -469,10 +555,12 @@
 
     var i = 0;
     overlayTitle.textContent = COUNTDOWN_STEPS[i];
+    playCountdownBeep(false);
     countdownTimer = setInterval(function () {
       i++;
       if (i < COUNTDOWN_STEPS.length) {
         overlayTitle.textContent = COUNTDOWN_STEPS[i];
+        playCountdownBeep(i === COUNTDOWN_STEPS.length - 1);
       } else {
         clearInterval(countdownTimer);
         countdownTimer = null;
@@ -484,6 +572,7 @@
   }
 
   function gameOver() {
+    playDieSound();
     running = false;
     clearInterval(loopHandle);
     overlayTitle.textContent = 'Game Over';
@@ -494,6 +583,7 @@
   }
 
   function gridWin() {
+    playWinSound();
     running = false;
     clearInterval(loopHandle);
 
