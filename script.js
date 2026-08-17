@@ -287,6 +287,7 @@
     // every rendered coordinate uniformly. Cut any in-flight glide short so
     // there's nothing left interpolating across the rescale.
     previousSnake = cloneSnake(snake);
+    trail = [];
     lastTickTime = performance.now();
     draw();
   }
