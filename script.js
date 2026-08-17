@@ -165,6 +165,35 @@
     osc.stop(ctx.currentTime + 0.04);
   }
 
+  function playPortalSound() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+
+    var oscIn = ctx.createOscillator();
+    var gainIn = ctx.createGain();
+    oscIn.connect(gainIn);
+    gainIn.connect(ctx.destination);
+    oscIn.type = 'sine';
+    oscIn.frequency.setValueAtTime(980, t);
+    oscIn.frequency.exponentialRampToValueAtTime(140, t + 0.16);
+    gainIn.gain.setValueAtTime(0.16, t);
+    gainIn.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    oscIn.start(t);
+    oscIn.stop(t + 0.16);
+
+    var oscOut = ctx.createOscillator();
+    var gainOut = ctx.createGain();
+    oscOut.connect(gainOut);
+    gainOut.connect(ctx.destination);
+    oscOut.type = 'triangle';
+    oscOut.frequency.setValueAtTime(180, t + 0.08);
+    oscOut.frequency.exponentialRampToValueAtTime(720, t + 0.22);
+    gainOut.gain.setValueAtTime(0.12, t + 0.08);
+    gainOut.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    oscOut.start(t + 0.08);
+    oscOut.stop(t + 0.22);
+  }
+
   function lerp(a, b, t) {
     return a + (b - a) * t;
   }
@@ -322,10 +351,12 @@
     var ez = ezToggle.checked;
 
     if (ez) {
-      if (newHead.x < 0) newHead.x = GRID_SIZE - 1;
-      else if (newHead.x >= GRID_SIZE) newHead.x = 0;
-      if (newHead.y < 0) newHead.y = GRID_SIZE - 1;
-      else if (newHead.y >= GRID_SIZE) newHead.y = 0;
+      var wrapped = false;
+      if (newHead.x < 0) { newHead.x = GRID_SIZE - 1; wrapped = true; }
+      else if (newHead.x >= GRID_SIZE) { newHead.x = 0; wrapped = true; }
+      if (newHead.y < 0) { newHead.y = GRID_SIZE - 1; wrapped = true; }
+      else if (newHead.y >= GRID_SIZE) { newHead.y = 0; wrapped = true; }
+      if (wrapped) playPortalSound();
     } else {
       if (
         newHead.x < 0 ||
