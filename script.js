@@ -421,32 +421,27 @@
   }
 
   function drawTrail() {
-    if (trail.length === 0) return;
+    if (trail.length < 2) return;
     var rgb = hexToRgb(currentTheme().head);
     var now = performance.now();
-    var pixel = skinKey !== 'smooth';
-    for (var i = 0; i < trail.length; i++) {
+    ctx.save();
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    for (var i = 0; i < trail.length - 1; i++) {
       var age = (now - trail[i].t) / TRAIL_MS;
       if (age < 0 || age >= 1) continue;
+      var a = trail[i];
+      var b = trail[i + 1];
+      if (Math.abs(a.x - b.x) > cellPx * 1.5 || Math.abs(a.y - b.y) > cellPx * 1.5) continue;
       var fade = 1 - age;
-      var alpha = fade * 0.38;
-      ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
-      if (pixel) {
-        var size = cellPx * (0.35 + fade * 0.4);
-        var half = size / 2;
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(trail[i].x - half, trail[i].y - half, size, size, 4);
-        } else {
-          ctx.rect(trail[i].x - half, trail[i].y - half, size, size);
-        }
-        ctx.fill();
-      } else {
-        ctx.beginPath();
-        ctx.arc(trail[i].x, trail[i].y, cellPx * (0.16 + fade * 0.22), 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.55 * fade) + ')';
+      ctx.lineWidth = cellPx * 0.22 * fade;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
     }
+    ctx.restore();
   }
 
   function draw() {
