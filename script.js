@@ -72,8 +72,6 @@
   var countdownTimer = null;
   var snake = [];
   var previousSnake = [];
-  var trail = [];
-  var TRAIL_MS = 320;
   var lastTickTime = 0;
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
@@ -287,7 +285,6 @@
     // every rendered coordinate uniformly. Cut any in-flight glide short so
     // there's nothing left interpolating across the rescale.
     previousSnake = cloneSnake(snake);
-    trail = [];
     lastTickTime = performance.now();
     draw();
   }
@@ -327,7 +324,6 @@
       { x: headX - 2, y: mid },
     ];
     previousSnake = cloneSnake(snake);
-    trail = [];
     lastTickTime = performance.now();
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
@@ -395,55 +391,6 @@
     }
   }
 
-  function headPixel(t) {
-    if (skinKey === 'smooth' && previousSnake[0] && snake[0]) {
-      return {
-        x: wrapLerp(previousSnake[0].x, snake[0].x, t) * cellPx + cellPx / 2,
-        y: wrapLerp(previousSnake[0].y, snake[0].y, t) * cellPx + cellPx / 2,
-      };
-    }
-    var head = snake[0] || { x: 0, y: 0 };
-    return {
-      x: head.x * cellPx + cellPx / 2,
-      y: head.y * cellPx + cellPx / 2,
-    };
-  }
-
-  function updateTrail(t) {
-    var now = performance.now();
-    while (trail.length && now - trail[0].t > TRAIL_MS) trail.shift();
-    if (!running || paused || !snake[0]) return;
-    var hp = headPixel(t);
-    var last = trail[trail.length - 1];
-    if (last && Math.abs(last.x - hp.x) < 1.5 && Math.abs(last.y - hp.y) < 1.5) return;
-    trail.push({ x: hp.x, y: hp.y, t: now });
-    if (trail.length > 48) trail.shift();
-  }
-
-  function drawTrail() {
-    if (trail.length < 2) return;
-    var rgb = hexToRgb(currentTheme().head);
-    var now = performance.now();
-    ctx.save();
-    ctx.lineCap = 'butt';
-    ctx.lineJoin = 'miter';
-    for (var i = 0; i < trail.length - 1; i++) {
-      var age = (now - trail[i].t) / TRAIL_MS;
-      if (age < 0 || age >= 1) continue;
-      var a = trail[i];
-      var b = trail[i + 1];
-      if (Math.abs(a.x - b.x) > cellPx * 1.5 || Math.abs(a.y - b.y) > cellPx * 1.5) continue;
-      var fade = 1 - age;
-      ctx.strokeStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + (0.55 * fade) + ')';
-      ctx.lineWidth = cellPx * 0.22 * fade;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
   function draw() {
     renderFrame(1);
   }
@@ -458,9 +405,6 @@
         ctx.fillRect(i * cellPx, j * cellPx, cellPx, cellPx);
       }
     }
-
-    updateTrail(t);
-    drawTrail();
 
     ctx.fillStyle = '#f44336';
     var pad = cellPx * 0.15;
