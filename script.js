@@ -38,6 +38,9 @@
   var overlayTitle = document.getElementById('overlay-title');
   var overlayMessage = document.getElementById('overlay-message');
   var startBtn = document.getElementById('start-btn');
+  var pauseBtn = document.getElementById('pause-btn');
+  var stopBtn = document.getElementById('stop-btn');
+  var runControls = document.getElementById('run-controls');
   var dpadBtns = document.querySelectorAll('.dpad-btn');
   var settingsEl = document.getElementById('settings');
   var settingBtns = document.querySelectorAll('.setting-btn');
@@ -648,12 +651,18 @@
     }
   }
 
+  function setRunControls(on) {
+    runControls.classList.toggle('hidden', !on);
+    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+  }
+
   function startGame() {
     resetGame();
     running = true;
     paused = false;
     overlay.classList.add('hidden');
     settingsEl.classList.add('disabled');
+    setRunControls(true);
     if (loopHandle) clearInterval(loopHandle);
     loopHandle = setInterval(loop, TICK_MS);
   }
@@ -691,10 +700,13 @@
   function gameOver() {
     playDieSound();
     running = false;
+    paused = false;
     clearInterval(loopHandle);
+    setRunControls(false);
     overlayTitle.textContent = 'Game Over';
     overlayMessage.textContent = 'Score: ' + score + (score >= best ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
     startBtn.textContent = 'Play Again';
+    startBtn.classList.remove('hidden-btn');
     settingsEl.classList.remove('disabled');
     overlay.classList.remove('hidden');
   }
@@ -702,7 +714,9 @@
   function bombExplode(at) {
     playBombSound();
     running = false;
+    paused = false;
     clearInterval(loopHandle);
+    setRunControls(false);
 
     var cx = at.x * cellPx + cellPx / 2;
     var cy = at.y * cellPx + cellPx / 2;
@@ -751,6 +765,7 @@
         overlayTitle.textContent = 'Boom!';
         overlayMessage.textContent = 'Score: ' + score + (score >= best && modeKey !== 'ez' ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
         startBtn.textContent = 'Play Again';
+        startBtn.classList.remove('hidden-btn');
         settingsEl.classList.remove('disabled');
         overlay.classList.remove('hidden');
       }
@@ -762,7 +777,9 @@
   function gridWin() {
     playWinSound();
     running = false;
+    paused = false;
     clearInterval(loopHandle);
+    setRunControls(false);
 
     var particles = [];
     var theme = currentTheme();
@@ -821,6 +838,7 @@
         overlayTitle.textContent = 'You Win!';
         overlayMessage.textContent = 'Score: ' + score + ' \u2014 Grid Complete!';
         startBtn.textContent = 'Play Again';
+        startBtn.classList.remove('hidden-btn');
         settingsEl.classList.remove('disabled');
         overlay.classList.remove('hidden');
       }
@@ -833,10 +851,30 @@
     if (!running) return;
     paused = !paused;
     overlayTitle.textContent = paused ? 'Paused' : '';
-    overlayMessage.textContent = paused ? 'Press space or tap Resume to continue.' : '';
+    overlayMessage.textContent = paused ? 'Tap Resume or press space to continue.' : '';
     startBtn.textContent = paused ? 'Resume' : 'Play';
     settingsEl.classList.toggle('disabled', paused);
     overlay.classList.toggle('hidden', !paused);
+    setRunControls(true);
+  }
+
+  function stopRun() {
+    if (!running && !paused) return;
+    running = false;
+    paused = false;
+    clearInterval(loopHandle);
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    overlayTitle.classList.remove('countdown');
+    overlayTitle.textContent = 'Snake';
+    overlayMessage.textContent = 'Run stopped.';
+    startBtn.textContent = 'Play';
+    startBtn.classList.remove('hidden-btn');
+    settingsEl.classList.remove('disabled');
+    overlay.classList.remove('hidden');
+    setRunControls(false);
   }
 
   settingBtns.forEach(function (btn) {
@@ -876,6 +914,14 @@
     } else {
       beginPlay();
     }
+  });
+
+  pauseBtn.addEventListener('click', function () {
+    togglePause();
+  });
+
+  stopBtn.addEventListener('click', function () {
+    stopRun();
   });
 
   document.addEventListener('keydown', function (e) {
