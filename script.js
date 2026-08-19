@@ -19,7 +19,7 @@
     blue: { a: '#b3d4ff', b: '#d9eaff' },
     green: { a: '#7ddb8e', b: '#a8e8b4' },
   };
-  var BEST_KEY = 'snake-best-score';
+  var BEST_KEY = 'snake-best-score-v2';
   var SPEED_KEY = 'snake-speed';
   var GRID_KEY = 'snake-grid';
   var SKIN_KEY = 'snake-skin';
@@ -74,6 +74,7 @@
   var food = { x: 0, y: 0 };
   var bombs = [];
   var score = 0;
+  localStorage.removeItem('snake-best-score');
   var best = Number(localStorage.getItem(BEST_KEY)) || 0;
   var running = false;
   var paused = false;
