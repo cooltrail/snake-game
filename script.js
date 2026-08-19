@@ -414,21 +414,26 @@
     if (direction.x === x && direction.y === y) return;
     playTurnSound();
     pendingDirection = { x: x, y: y };
-    if (skinKey === 'smooth' && running && !paused && !turnBoostedThisTick) {
+    if (skinKey === 'smooth' && running && !paused) {
       var now = performance.now();
-      var elapsed = Math.max(0, now - lastTickTime);
-      var remaining = tickLen - elapsed;
-      if (remaining > TURN_FINISH_MS) {
-        turnBoostedThisTick = true;
-        boostFromT = tickLen > 0 ? Math.min(1, elapsed / tickLen) : 1;
-        boostStart = now;
-        tickLen = elapsed + TURN_FINISH_MS;
-        if (loopHandle) clearInterval(loopHandle);
-        loopHandle = setTimeout(function () {
-          if (running && !paused) loop();
-          if (running) loopHandle = setInterval(loop, TICK_MS);
-        }, TURN_FINISH_MS);
+      var visualT;
+      if (turnBoostedThisTick) {
+        var u = Math.min(1, Math.max(0, (now - boostStart) / TURN_FINISH_MS));
+        var eased = 1 - (1 - u) * (1 - u);
+        visualT = boostFromT + (1 - boostFromT) * eased;
+      } else {
+        var elapsed = Math.max(0, now - lastTickTime);
+        visualT = tickLen > 0 ? Math.min(1, elapsed / tickLen) : 1;
       }
+      turnBoostedThisTick = true;
+      boostFromT = visualT;
+      boostStart = now;
+      tickLen = (now - lastTickTime) + TURN_FINISH_MS;
+      if (loopHandle) clearInterval(loopHandle);
+      loopHandle = setTimeout(function () {
+        if (running && !paused) loop();
+        if (running) loopHandle = setInterval(loop, TICK_MS);
+      }, TURN_FINISH_MS);
     }
   }
 
