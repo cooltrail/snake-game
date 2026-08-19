@@ -27,6 +27,7 @@
   var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
   var EZ_KEY = 'snake-ez';
+  var BOMB_KEY = 'snake-bomb';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
 
@@ -43,6 +44,7 @@
   var settingBtns = document.querySelectorAll('.setting-btn');
   var countdownToggle = document.getElementById('countdown-toggle');
   var ezToggle = document.getElementById('ez-toggle');
+  var bombToggle = document.getElementById('bomb-toggle');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
@@ -68,6 +70,11 @@
     localStorage.setItem(EZ_KEY, ezToggle.checked ? '1' : '0');
   });
 
+  bombToggle.checked = localStorage.getItem(BOMB_KEY) === '1';
+  bombToggle.addEventListener('change', function () {
+    localStorage.setItem(BOMB_KEY, bombToggle.checked ? '1' : '0');
+  });
+
   var cellPx = 0;
   var countdownTimer = null;
   var snake = [];
@@ -76,6 +83,7 @@
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
   var food = { x: 0, y: 0 };
+  var bombs = [];
   var score = 0;
   var best = Number(localStorage.getItem(BEST_KEY)) || 0;
   var running = false;
@@ -117,6 +125,34 @@
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.4);
+  }
+
+  function playBombSound() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.38);
+    gain.gain.setValueAtTime(0.28, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+    osc.start(t);
+    osc.stop(t + 0.38);
+
+    var osc2 = ctx.createOscillator();
+    var gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(90, t);
+    osc2.frequency.exponentialRampToValueAtTime(28, t + 0.28);
+    gain2.gain.setValueAtTime(0.18, t);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    osc2.start(t);
+    osc2.stop(t + 0.28);
   }
 
   function playWinSound() {
@@ -299,6 +335,7 @@
   function placeFood() {
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
+    bombs.forEach(function (b) { occupied[b.x + ',' + b.y] = true; });
     var totalCells = GRID_SIZE * GRID_SIZE;
     if (Object.keys(occupied).length >= totalCells) {
       food = { x: -1, y: -1 };
@@ -309,6 +346,43 @@
       cell = randomCell();
     } while (occupied[cell.x + ',' + cell.y]);
     food = cell;
+  }
+
+  function placeBombs() {
+    bombs = [];
+    if (!bombToggle.checked) return;
+    var count = Math.max(2, Math.floor(GRID_SIZE / 2) - 1);
+    var occupied = {};
+    snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
+    if (food.x >= 0) occupied[food.x + ',' + food.y] = true;
+    var hx = snake[0] ? snake[0].x : 0;
+    var hy = snake[0] ? snake[0].y : 0;
+    var dx = pendingDirection.x;
+    var dy = pendingDirection.y;
+    for (var k = 1; k <= 2; k++) {
+      var sx = hx + dx * k;
+      var sy = hy + dy * k;
+      if (ezToggle.checked) {
+        sx = (sx + GRID_SIZE) % GRID_SIZE;
+        sy = (sy + GRID_SIZE) % GRID_SIZE;
+      }
+      if (sx >= 0 && sy >= 0 && sx < GRID_SIZE && sy < GRID_SIZE) {
+        occupied[sx + ',' + sy] = true;
+      }
+    }
+    var free = GRID_SIZE * GRID_SIZE - Object.keys(occupied).length;
+    count = Math.min(count, free);
+    for (var i = 0; i < count; i++) {
+      var cell;
+      var guard = 0;
+      do {
+        cell = randomCell();
+        guard++;
+      } while (occupied[cell.x + ',' + cell.y] && guard < 200);
+      if (occupied[cell.x + ',' + cell.y]) break;
+      occupied[cell.x + ',' + cell.y] = true;
+      bombs.push(cell);
+    }
   }
 
   function resetGame() {
@@ -330,6 +404,7 @@
     score = 0;
     scoreEl.textContent = score;
     placeFood();
+    placeBombs();
     draw();
   }
 
@@ -370,6 +445,11 @@
       }
     }
 
+    if (bombs.some(function (b) { return b.x === newHead.x && b.y === newHead.y; })) {
+      bombExplode(newHead);
+      return;
+    }
+
     snake.unshift(newHead);
 
     if (food.x >= 0 && newHead.x === food.x && newHead.y === food.y) {
@@ -386,6 +466,7 @@
         gridWin();
         return;
       }
+      placeBombs();
     } else {
       snake.pop();
     }
@@ -413,6 +494,20 @@
       ? ctx.roundRect(food.x * cellPx + pad, food.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2, 6)
       : ctx.rect(food.x * cellPx + pad, food.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2);
     ctx.fill();
+
+    bombs.forEach(function (b) {
+      var cx = b.x * cellPx + cellPx / 2;
+      var cy = b.y * cellPx + cellPx / 2;
+      var r = cellPx * 0.32;
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2a2a2a';
+      ctx.beginPath();
+      ctx.arc(cx - r * 0.22, cy - r * 0.22, r * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
     if (skinKey === 'smooth') {
       drawSmoothSnake(t);
@@ -611,6 +706,66 @@
     startBtn.textContent = 'Play Again';
     settingsEl.classList.remove('disabled');
     overlay.classList.remove('hidden');
+  }
+
+  function bombExplode(at) {
+    playBombSound();
+    running = false;
+    clearInterval(loopHandle);
+
+    var cx = at.x * cellPx + cellPx / 2;
+    var cy = at.y * cellPx + cellPx / 2;
+    var colors = ['#111', '#333', '#ff6b35', '#ffcc33', '#f44336'];
+    var particles = [];
+    for (var i = 0; i < 28; i++) {
+      var ang = (Math.PI * 2 * i) / 28 + Math.random() * 0.4;
+      var speed = cellPx * (0.12 + Math.random() * 0.35);
+      particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        size: cellPx * (0.12 + Math.random() * 0.18),
+        color: colors[i % colors.length],
+        alpha: 1,
+      });
+    }
+
+    var startTime = performance.now();
+    var duration = 700;
+
+    function animateBoom(now) {
+      var elapsed = now - startTime;
+      var progress = Math.min(1, elapsed / duration);
+
+      renderFrame(1);
+
+      particles.forEach(function (p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.alpha = 1 - progress;
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (1 - progress * 0.4), 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      if (progress < 1) {
+        requestAnimationFrame(animateBoom);
+      } else {
+        overlayTitle.textContent = 'Boom!';
+        overlayMessage.textContent = 'Score: ' + score + (score >= best && !ezToggle.checked ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
+        startBtn.textContent = 'Play Again';
+        settingsEl.classList.remove('disabled');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    requestAnimationFrame(animateBoom);
   }
 
   function gridWin() {
