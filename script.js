@@ -74,6 +74,7 @@
   var lastTickTime = 0;
   var tickLen = 120;
   var TURN_FINISH_MS = 70;
+  var nextTurnBoostAt = 0;
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
   var food = { x: 0, y: 0 };
@@ -396,6 +397,7 @@
     previousSnake = cloneSnake(snake);
     lastTickTime = performance.now();
     tickLen = TICK_MS;
+    nextTurnBoostAt = 0;
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
     score = 0;
@@ -412,10 +414,12 @@
     pendingDirection = { x: x, y: y };
     if (skinKey === 'smooth' && running && !paused) {
       var now = performance.now();
+      if (now < nextTurnBoostAt) return;
       var elapsed = now - lastTickTime;
       var remaining = tickLen - elapsed;
-      if (remaining > TURN_FINISH_MS) {
+      if (elapsed > tickLen * 0.2 && remaining > TURN_FINISH_MS) {
         tickLen = elapsed + TURN_FINISH_MS;
+        nextTurnBoostAt = now + TICK_MS;
         if (loopHandle) clearInterval(loopHandle);
         loopHandle = setTimeout(function () {
           if (running && !paused) loop();
