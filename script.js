@@ -407,6 +407,14 @@
     if (direction.x === x && direction.y === y) return;
     playTurnSound();
     pendingDirection = { x: x, y: y };
+    if (skinKey === 'smooth' && running && !paused) {
+      step();
+      if (loopHandle) {
+        clearInterval(loopHandle);
+        loopHandle = setInterval(loop, TICK_MS);
+      }
+      draw();
+    }
   }
 
   function step() {
