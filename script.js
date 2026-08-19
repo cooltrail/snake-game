@@ -73,8 +73,10 @@
   var previousSnake = [];
   var lastTickTime = 0;
   var tickLen = 120;
-  var TURN_FINISH_MS = 70;
-  var nextTurnBoostAt = 0;
+  var TURN_FINISH_MS = 100;
+  var turnBoostedThisTick = false;
+  var boostFromT = 0;
+  var boostStart = 0;
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
   var food = { x: 0, y: 0 };
@@ -397,7 +399,7 @@
     previousSnake = cloneSnake(snake);
     lastTickTime = performance.now();
     tickLen = TICK_MS;
-    nextTurnBoostAt = 0;
+    turnBoostedThisTick = false;
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
     score = 0;
@@ -412,14 +414,15 @@
     if (direction.x === x && direction.y === y) return;
     playTurnSound();
     pendingDirection = { x: x, y: y };
-    if (skinKey === 'smooth' && running && !paused) {
+    if (skinKey === 'smooth' && running && !paused && !turnBoostedThisTick) {
       var now = performance.now();
-      if (now < nextTurnBoostAt) return;
-      var elapsed = now - lastTickTime;
+      var elapsed = Math.max(0, now - lastTickTime);
       var remaining = tickLen - elapsed;
-      if (elapsed > tickLen * 0.2 && remaining > TURN_FINISH_MS) {
+      if (remaining > TURN_FINISH_MS) {
+        turnBoostedThisTick = true;
+        boostFromT = tickLen > 0 ? Math.min(1, elapsed / tickLen) : 1;
+        boostStart = now;
         tickLen = elapsed + TURN_FINISH_MS;
-        nextTurnBoostAt = now + TICK_MS;
         if (loopHandle) clearInterval(loopHandle);
         loopHandle = setTimeout(function () {
           if (running && !paused) loop();
@@ -433,6 +436,7 @@
     previousSnake = cloneSnake(snake);
     lastTickTime = performance.now();
     tickLen = TICK_MS;
+    turnBoostedThisTick = false;
 
     direction = pendingDirection;
     var head = snake[0];
@@ -533,7 +537,15 @@
 
   function animate() {
     requestAnimationFrame(animate);
-    var t = tickLen > 0 ? Math.min(1, Math.max(0, (performance.now() - lastTickTime) / tickLen)) : 1;
+    var now = performance.now();
+    var t;
+    if (turnBoostedThisTick && running && !paused) {
+      var u = Math.min(1, Math.max(0, (now - boostStart) / TURN_FINISH_MS));
+      var eased = 1 - (1 - u) * (1 - u);
+      t = boostFromT + (1 - boostFromT) * eased;
+    } else {
+      t = tickLen > 0 ? Math.min(1, Math.max(0, (now - lastTickTime) / tickLen)) : 1;
+    }
     if (paused || !running) t = 1;
     renderFrame(t);
   }
