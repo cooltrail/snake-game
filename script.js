@@ -26,8 +26,7 @@
   var COLOR_KEY = 'snake-color';
   var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
-  var EZ_KEY = 'snake-ez';
-  var BOMB_KEY = 'snake-bomb';
+  var MODE_KEY = 'snake-mode';
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
 
@@ -43,19 +42,19 @@
   var settingsEl = document.getElementById('settings');
   var settingBtns = document.querySelectorAll('.setting-btn');
   var countdownToggle = document.getElementById('countdown-toggle');
-  var ezToggle = document.getElementById('ez-toggle');
-  var bombToggle = document.getElementById('bomb-toggle');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
   var skinKey = localStorage.getItem(SKIN_KEY) || 'pixel';
   var colorKey = localStorage.getItem(COLOR_KEY) || 'default';
   var gridColorKey = localStorage.getItem(GRID_COLOR_KEY) || 'default';
+  var modeKey = localStorage.getItem(MODE_KEY) || 'classic';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
   if (!COLOR_THEMES[colorKey]) colorKey = 'default';
   if (!GRID_COLORS[gridColorKey]) gridColorKey = 'default';
+  if (modeKey !== 'ez' && modeKey !== 'bomb') modeKey = 'classic';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -63,16 +62,6 @@
   countdownToggle.checked = localStorage.getItem(COUNTDOWN_KEY) === '1';
   countdownToggle.addEventListener('change', function () {
     localStorage.setItem(COUNTDOWN_KEY, countdownToggle.checked ? '1' : '0');
-  });
-
-  ezToggle.checked = localStorage.getItem(EZ_KEY) === '1';
-  ezToggle.addEventListener('change', function () {
-    localStorage.setItem(EZ_KEY, ezToggle.checked ? '1' : '0');
-  });
-
-  bombToggle.checked = localStorage.getItem(BOMB_KEY) === '1';
-  bombToggle.addEventListener('change', function () {
-    localStorage.setItem(BOMB_KEY, bombToggle.checked ? '1' : '0');
   });
 
   var cellPx = 0;
@@ -299,6 +288,7 @@
     skin: function () { return skinKey; },
     color: function () { return colorKey; },
     gridColor: function () { return gridColorKey; },
+    mode: function () { return modeKey; },
   };
 
   function syncSettingButtons() {
@@ -350,7 +340,7 @@
 
   function placeBombs() {
     bombs = [];
-    if (!bombToggle.checked) return;
+    if (modeKey !== 'bomb') return;
     var count = Math.max(2, Math.floor(GRID_SIZE / 2) - 1);
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
@@ -362,7 +352,7 @@
     for (var k = 1; k <= 2; k++) {
       var sx = hx + dx * k;
       var sy = hy + dy * k;
-      if (ezToggle.checked) {
+      if (modeKey === 'ez') {
         sx = (sx + GRID_SIZE) % GRID_SIZE;
         sy = (sy + GRID_SIZE) % GRID_SIZE;
       }
@@ -423,7 +413,7 @@
     var head = snake[0];
     var newHead = { x: head.x + direction.x, y: head.y + direction.y };
 
-    var ez = ezToggle.checked;
+    var ez = modeKey === 'ez';
 
     if (ez) {
       var wrapped = false;
@@ -758,7 +748,7 @@
         requestAnimationFrame(animateBoom);
       } else {
         overlayTitle.textContent = 'Boom!';
-        overlayMessage.textContent = 'Score: ' + score + (score >= best && !ezToggle.checked ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
+        overlayMessage.textContent = 'Score: ' + score + (score >= best && modeKey !== 'ez' ? ' \u2014 new best!' : ' \u00b7 Best: ' + best);
         startBtn.textContent = 'Play Again';
         settingsEl.classList.remove('disabled');
         overlay.classList.remove('hidden');
@@ -870,6 +860,9 @@
       } else if (group === 'gridColor') {
         gridColorKey = btn.dataset.value;
         localStorage.setItem(GRID_COLOR_KEY, gridColorKey);
+      } else if (group === 'mode') {
+        modeKey = btn.dataset.value;
+        localStorage.setItem(MODE_KEY, modeKey);
       }
       syncSettingButtons();
       resetGame();
