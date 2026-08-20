@@ -15,9 +15,9 @@
   // Checkerboard cell tints for the board (independent of snake color).
   var GRID_COLORS = {
     default: { a: 'rgba(255,255,255,0.02)', b: 'rgba(0,0,0,0)' },
-    red: { a: '#ff8a8a', b: '#ffbaba' },
+    red: { a: '#ff4444', b: '#ff7777' },
     blue: { a: '#b3d4ff', b: '#d9eaff' },
-    green: { a: '#7ddb8e', b: '#a8e8b4' },
+    green: { a: '#3cc95a', b: '#6ddb80' },
   };
   var BEST_KEY = 'snake-best-score-v2';
   var SPEED_KEY = 'snake-speed';
