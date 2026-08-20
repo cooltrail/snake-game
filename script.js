@@ -15,7 +15,7 @@
   // Checkerboard cell tints for the board (independent of snake color).
   var GRID_COLORS = {
     default: { a: 'rgba(255,255,255,0.02)', b: 'rgba(0,0,0,0)' },
-    red: { a: '#ff4444', b: '#ff7068' },
+    red: { a: '#ff0505', b: '#000000' },
     blue: { a: '#b3d4ff', b: '#d9eaff' },
     green: { a: '#3cc95a', b: '#6ddb80' },
   };
