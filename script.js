@@ -17,7 +17,7 @@
     default: { a: 'rgba(255,255,255,0.02)', b: 'rgba(0,0,0,0)' },
     red: { a: '#960303', b: '#2a2a2a' },
     blue: { a: '#b3d4ff', b: '#d9eaff' },
-    green: { a: '#3cc95a', b: '#6ddb80' },
+    green: { a: '#1a6e30', b: '#1ee05a' },
   };
   var BEST_KEY = 'snake-best-score-v2';
   var SPEED_KEY = 'snake-speed';
