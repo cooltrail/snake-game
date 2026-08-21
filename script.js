@@ -27,6 +27,8 @@
   var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
   var MODE_KEY = 'snake-mode';
+  var BOMB_LEVEL_KEY = 'snake-bomb-level';
+  var BOMB_LEVEL_SCALE = { easy: 0.45, normal: 1, mega: 2 };
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
 
@@ -45,6 +47,7 @@
   var settingsEl = document.getElementById('settings');
   var settingBtns = document.querySelectorAll('.setting-btn');
   var countdownToggle = document.getElementById('countdown-toggle');
+  var bombLevelGroup = document.getElementById('bomb-level-group');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
@@ -52,12 +55,14 @@
   var colorKey = localStorage.getItem(COLOR_KEY) || 'default';
   var gridColorKey = localStorage.getItem(GRID_COLOR_KEY) || 'default';
   var modeKey = localStorage.getItem(MODE_KEY) || 'classic';
+  var bombLevelKey = localStorage.getItem(BOMB_LEVEL_KEY) || 'normal';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
   if (!COLOR_THEMES[colorKey]) colorKey = 'default';
   if (!GRID_COLORS[gridColorKey]) gridColorKey = 'default';
   if (modeKey !== 'ez' && modeKey !== 'bomb') modeKey = 'classic';
+  if (bombLevelKey !== 'easy' && bombLevelKey !== 'mega') bombLevelKey = 'normal';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -298,6 +303,7 @@
     color: function () { return colorKey; },
     gridColor: function () { return gridColorKey; },
     mode: function () { return modeKey; },
+    bombLevel: function () { return bombLevelKey; },
   };
 
   function syncSettingButtons() {
@@ -306,6 +312,7 @@
       var value = GROUP_VALUES[group] ? GROUP_VALUES[group]() : null;
       btn.classList.toggle('active', btn.dataset.value === value);
     });
+    bombLevelGroup.classList.toggle('hidden', modeKey !== 'bomb');
   }
   syncSettingButtons();
 
@@ -350,7 +357,9 @@
   function placeBombs() {
     bombs = [];
     if (modeKey !== 'bomb') return;
-    var count = Math.max(2, Math.floor(GRID_SIZE / 2) - 1);
+    var normal = Math.max(2, Math.floor(GRID_SIZE / 2) - 1);
+    var scale = BOMB_LEVEL_SCALE[bombLevelKey] || 1;
+    var count = Math.max(1, Math.round(normal * scale));
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
     if (food.x >= 0) occupied[food.x + ',' + food.y] = true;
@@ -940,6 +949,9 @@
       } else if (group === 'mode') {
         modeKey = btn.dataset.value;
         localStorage.setItem(MODE_KEY, modeKey);
+      } else if (group === 'bombLevel') {
+        bombLevelKey = btn.dataset.value;
+        localStorage.setItem(BOMB_LEVEL_KEY, bombLevelKey);
       }
       syncSettingButtons();
       resetGame();
