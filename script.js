@@ -27,6 +27,7 @@
   var GRID_COLOR_KEY = 'snake-grid-color';
   var COUNTDOWN_KEY = 'snake-countdown';
   var MODE_KEY = 'snake-mode';
+  var THEME_KEY = 'snake-theme';
   var BOMB_LEVEL_KEY = 'snake-bomb-level';
   var BOMB_LEVEL_SCALE = { easy: 0.45, normal: 1, mega: 2 };
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
@@ -48,6 +49,7 @@
   var settingBtns = document.querySelectorAll('.setting-btn');
   var countdownToggle = document.getElementById('countdown-toggle');
   var bombLevelGroup = document.getElementById('bomb-level-group');
+  var themeBtn = document.getElementById('theme-btn');
 
   var speedKey = localStorage.getItem(SPEED_KEY) || 'fast';
   var gridKey = localStorage.getItem(GRID_KEY) || 'medium';
@@ -70,6 +72,22 @@
   countdownToggle.checked = localStorage.getItem(COUNTDOWN_KEY) === '1';
   countdownToggle.addEventListener('change', function () {
     localStorage.setItem(COUNTDOWN_KEY, countdownToggle.checked ? '1' : '0');
+  });
+
+  var lightMode = localStorage.getItem(THEME_KEY) === 'light';
+  function applyTheme() {
+    document.documentElement.classList.toggle('light', lightMode);
+    themeBtn.textContent = lightMode ? 'Dark' : 'Light';
+    GRID_COLORS.default = lightMode
+      ? { a: '#ffffff', b: '#f2f2f2' }
+      : { a: 'rgba(255,255,255,0.02)', b: 'rgba(0,0,0,0)' };
+    if (cellPx) draw();
+  }
+  applyTheme();
+  themeBtn.addEventListener('click', function () {
+    lightMode = !lightMode;
+    localStorage.setItem(THEME_KEY, lightMode ? 'light' : 'dark');
+    applyTheme();
   });
 
   var cellPx = 0;
