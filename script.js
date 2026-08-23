@@ -108,6 +108,7 @@
   var portalB = [];
   var portalJump = false;
   var portalVertical = true;
+  var portalNeedsClose = false;
   var score = 0;
   localStorage.removeItem('snake-best-score');
   var best = Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -435,6 +436,19 @@
     return null;
   }
 
+  function snakeStillInPortal() {
+    var i;
+    for (i = 0; i < snake.length; i++) {
+      if (portalHit(snake[i])) return true;
+    }
+    for (i = 0; i < snake.length - 1; i++) {
+      if (Math.abs(snake[i].x - snake[i + 1].x) > 1 || Math.abs(snake[i].y - snake[i + 1].y) > 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function placePortals() {
     portalA = [];
     portalB = [];
@@ -490,6 +504,8 @@
     turnBoostedThisTick = false;
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
+    portalJump = false;
+    portalNeedsClose = false;
     score = 0;
     scoreEl.textContent = score;
     food = { x: -1, y: -1 };
@@ -569,6 +585,7 @@
           var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
           newHead = { x: dest.x, y: dest.y };
           portalJump = true;
+          portalNeedsClose = true;
           playPortalSound();
           if (snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })) {
             gameOver();
@@ -587,7 +604,10 @@
 
     var ate = food.x >= 0 && newHead.x === food.x && newHead.y === food.y;
     if (!ate) snake.pop();
-    if (portalJump) placePortals();
+    if (portalNeedsClose && !snakeStillInPortal()) {
+      portalNeedsClose = false;
+      placePortals();
+    }
 
     if (ate) {
       playEatSound();
