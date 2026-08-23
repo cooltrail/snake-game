@@ -63,7 +63,7 @@
   if (!SKINS[skinKey]) skinKey = 'pixel';
   if (!COLOR_THEMES[colorKey]) colorKey = 'default';
   if (!GRID_COLORS[gridColorKey]) gridColorKey = 'default';
-  if (modeKey !== 'ez' && modeKey !== 'bomb') modeKey = 'classic';
+  if (modeKey !== 'ez' && modeKey !== 'bomb' && modeKey !== 'portal') modeKey = 'classic';
   if (bombLevelKey !== 'easy' && bombLevelKey !== 'mega') bombLevelKey = 'normal';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
@@ -104,6 +104,9 @@
   var pendingDirection = { x: 1, y: 0 };
   var food = { x: 0, y: 0 };
   var bombs = [];
+  var portalA = [];
+  var portalB = [];
+  var portalJump = false;
   var score = 0;
   localStorage.removeItem('snake-best-score');
   var best = Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -360,6 +363,7 @@
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
     bombs.forEach(function (b) { occupied[b.x + ',' + b.y] = true; });
+    portalA.concat(portalB).forEach(function (p) { occupied[p.x + ',' + p.y] = true; });
     var totalCells = GRID_SIZE * GRID_SIZE;
     if (Object.keys(occupied).length >= totalCells) {
       food = { x: -1, y: -1 };
@@ -411,6 +415,61 @@
     }
   }
 
+  function portalLine(vertical, axis, start, len) {
+    var cells = [];
+    for (var i = 0; i < len; i++) {
+      cells.push(vertical ? { x: axis, y: start + i } : { x: start + i, y: axis });
+    }
+    return cells;
+  }
+
+  function portalHit(cell) {
+    var i;
+    for (i = 0; i < portalA.length; i++) {
+      if (portalA[i].x === cell.x && portalA[i].y === cell.y) return { from: 'a', i: i };
+    }
+    for (i = 0; i < portalB.length; i++) {
+      if (portalB[i].x === cell.x && portalB[i].y === cell.y) return { from: 'b', i: i };
+    }
+    return null;
+  }
+
+  function placePortals() {
+    portalA = [];
+    portalB = [];
+    if (modeKey !== 'portal') return;
+    var len = Math.max(3, Math.floor(GRID_SIZE / 3));
+    var vertical = Math.random() < 0.5;
+    var blocked = {};
+    snake.forEach(function (s) { blocked[s.x + ',' + s.y] = true; });
+    if (food.x >= 0) blocked[food.x + ',' + food.y] = true;
+    var mid = Math.floor(GRID_SIZE / 2);
+    for (var x = 0; x <= 4; x++) blocked[x + ',' + mid] = true;
+    var half = Math.floor(GRID_SIZE / 2);
+    var n;
+    for (n = 0; n < 60; n++) {
+      var axisA;
+      var axisB;
+      if (vertical) {
+        axisA = 1 + Math.floor(Math.random() * Math.max(1, half - 2));
+        axisB = half + 1 + Math.floor(Math.random() * Math.max(1, GRID_SIZE - half - 2));
+      } else {
+        axisA = Math.floor(Math.random() * Math.max(1, half - 1));
+        axisB = half + 1 + Math.floor(Math.random() * Math.max(1, GRID_SIZE - half - 2));
+      }
+      if (axisB >= GRID_SIZE || Math.abs(axisB - axisA) < 3) continue;
+      var startA = Math.floor(Math.random() * (GRID_SIZE - len + 1));
+      var startB = Math.floor(Math.random() * (GRID_SIZE - len + 1));
+      var a = portalLine(vertical, axisA, startA, len);
+      var b = portalLine(vertical, axisB, startB, len);
+      var overlap = a.concat(b).some(function (c) { return blocked[c.x + ',' + c.y]; });
+      if (overlap) continue;
+      portalA = a;
+      portalB = b;
+      return;
+    }
+  }
+
   function resetGame() {
     var mid = Math.floor(GRID_SIZE / 2);
     // The snake starts moving right immediately, so start it as close to
@@ -431,6 +490,8 @@
     pendingDirection = { x: 1, y: 0 };
     score = 0;
     scoreEl.textContent = score;
+    food = { x: -1, y: -1 };
+    placePortals();
     placeFood();
     placeBombs();
     draw();
@@ -473,6 +534,7 @@
     direction = pendingDirection;
     var head = snake[0];
     var newHead = { x: head.x + direction.x, y: head.y + direction.y };
+    portalJump = false;
 
     var ez = modeKey === 'ez';
 
@@ -493,6 +555,21 @@
       ) {
         gameOver();
         return;
+      }
+    }
+
+    if (modeKey === 'portal') {
+      var hit = portalHit(newHead);
+      var from = portalHit(head);
+      if (hit && (!from || from.from !== hit.from)) {
+        var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
+        newHead = { x: dest.x, y: dest.y };
+        portalJump = true;
+        playPortalSound();
+        if (snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })) {
+          gameOver();
+          return;
+        }
       }
     }
 
@@ -523,6 +600,34 @@
     }
   }
 
+  function drawPortalLine(cells, color) {
+    if (!cells || cells.length === 0) return;
+    var a = cells[0];
+    var b = cells[cells.length - 1];
+    var x1 = a.x * cellPx + cellPx / 2;
+    var y1 = a.y * cellPx + cellPx / 2;
+    var x2 = b.x * cellPx + cellPx / 2;
+    var y2 = b.y * cellPx + cellPx / 2;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = cellPx * 0.7;
+    ctx.lineWidth = cellPx * 0.28;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.shadowBlur = cellPx * 0.2;
+    ctx.lineWidth = cellPx * 0.1;
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function draw() {
     renderFrame(1);
   }
@@ -537,6 +642,9 @@
         ctx.fillRect(i * cellPx, j * cellPx, cellPx, cellPx);
       }
     }
+
+    drawPortalLine(portalA, '#00f6ff');
+    drawPortalLine(portalB, '#ff2bd6');
 
     ctx.fillStyle = '#f44336';
     var pad = cellPx * 0.15;
@@ -630,8 +738,15 @@
     // actually travel within a tick. Every other segment is a static
     // footprint, so it's drawn at its resting grid cell with no lerp.
     var headPrev = previousSnake[0] || snake[0];
-    var headGx = wrapLerp(headPrev.x, snake[0].x, t);
-    var headGy = wrapLerp(headPrev.y, snake[0].y, t);
+    var headGx;
+    var headGy;
+    if (portalJump && (Math.abs(headPrev.x - snake[0].x) > 1 || Math.abs(headPrev.y - snake[0].y) > 1)) {
+      headGx = lerp(snake[0].x - direction.x, snake[0].x, t);
+      headGy = lerp(snake[0].y - direction.y, snake[0].y, t);
+    } else {
+      headGx = wrapLerp(headPrev.x, snake[0].x, t);
+      headGy = wrapLerp(headPrev.y, snake[0].y, t);
+    }
 
     var pts = [{ x: headGx * cellPx + cellPx / 2, y: headGy * cellPx + cellPx / 2, gx: headGx, gy: headGy }];
     for (var i = 1; i < snake.length; i++) {
@@ -639,8 +754,15 @@
       if (i === snake.length - 1 && snake.length > 1) {
         var tailPrev = previousSnake[prevLen - 1] || seg;
         pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2, gx: seg.x, gy: seg.y });
-        var tailGx = wrapLerp(tailPrev.x, seg.x, t);
-        var tailGy = wrapLerp(tailPrev.y, seg.y, t);
+        var tailGx;
+        var tailGy;
+        if (modeKey === 'portal' && (Math.abs(tailPrev.x - seg.x) > 1 || Math.abs(tailPrev.y - seg.y) > 1)) {
+          tailGx = lerp(seg.x, seg.x, t);
+          tailGy = lerp(seg.y, seg.y, t);
+        } else {
+          tailGx = wrapLerp(tailPrev.x, seg.x, t);
+          tailGy = wrapLerp(tailPrev.y, seg.y, t);
+        }
         pts.push({ x: tailGx * cellPx + cellPx / 2, y: tailGy * cellPx + cellPx / 2, gx: tailGx, gy: tailGy });
       } else {
         pts.push({ x: seg.x * cellPx + cellPx / 2, y: seg.y * cellPx + cellPx / 2, gx: seg.x, gy: seg.y });

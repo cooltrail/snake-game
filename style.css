@@ -207,6 +207,10 @@ html, body {
   display: none;
 }
 
+.setting-group.span-2 {
+  grid-column: 1 / -1;
+}
+
 .toggle-row {
   grid-column: 1 / -1;
   flex-direction: row;

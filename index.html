@@ -9,7 +9,7 @@
   <script>
     if (localStorage.getItem('snake-theme') === 'light') document.documentElement.classList.add('light');
   </script>
-  <link rel="stylesheet" href="style.css?v=65" />
+  <link rel="stylesheet" href="style.css?v=66" />
 </head>
 <body>
   <div class="app">
@@ -41,12 +41,13 @@
           <p id="overlay-message">Arrows, WASD, or the pad to move.</p>
 
           <div id="settings" class="settings">
-            <div class="setting-group">
+            <div class="setting-group span-2">
               <span class="setting-label">Mode</span>
               <div class="setting-options" data-setting="mode">
                 <button class="setting-btn active" data-value="classic">Classic</button>
                 <button class="setting-btn" data-value="ez">EZ</button>
                 <button class="setting-btn" data-value="bomb">Bomb</button>
+                <button class="setting-btn" data-value="portal">Portal</button>
               </div>
             </div>
             <div id="bomb-level-group" class="setting-group hidden">
@@ -125,6 +126,6 @@
     </footer>
   </div>
 
-  <script src="script.js?v=65"></script>
+  <script src="script.js?v=66"></script>
 </body>
 </html>
