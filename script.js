@@ -563,7 +563,7 @@
     if (modeKey === 'portal') {
       var hit = portalHit(newHead);
       if (hit) {
-        var through = portalVertical ? direction.x !== 0 : direction.y !== 0;
+        var through = portalVertical ? direction.y !== 0 : direction.x !== 0;
         var from = portalHit(head);
         if (through && (!from || from.from !== hit.from)) {
           var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
@@ -607,17 +607,15 @@
 
   function drawPortalLine(cells) {
     if (!cells || cells.length === 0) return;
+    var thick = Math.max(3, cellPx * 0.22);
     cells.forEach(function (c) {
+      var x = c.x * cellPx;
+      var y = c.y * cellPx;
       ctx.fillStyle = 'rgb(255, 10, 5)';
-      ctx.fillRect(c.x * cellPx, c.y * cellPx, cellPx, cellPx);
-      ctx.fillStyle = 'rgb(120, 5, 2)';
-      var edge = Math.max(2, cellPx * 0.12);
       if (portalVertical) {
-        ctx.fillRect(c.x * cellPx, c.y * cellPx, cellPx, edge);
-        ctx.fillRect(c.x * cellPx, (c.y + 1) * cellPx - edge, cellPx, edge);
+        ctx.fillRect(x + (cellPx - thick) / 2, y, thick, cellPx);
       } else {
-        ctx.fillRect(c.x * cellPx, c.y * cellPx, edge, cellPx);
-        ctx.fillRect((c.x + 1) * cellPx - edge, c.y * cellPx, edge, cellPx);
+        ctx.fillRect(x, y + (cellPx - thick) / 2, cellPx, thick);
       }
     });
   }
