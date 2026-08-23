@@ -563,7 +563,7 @@
     if (modeKey === 'portal') {
       var hit = portalHit(newHead);
       if (hit) {
-        var through = portalVertical ? direction.y !== 0 : direction.x !== 0;
+        var through = portalVertical ? direction.x !== 0 : direction.y !== 0;
         var from = portalHit(head);
         if (through && (!from || from.from !== hit.from)) {
           var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
@@ -585,7 +585,11 @@
 
     snake.unshift(newHead);
 
-    if (food.x >= 0 && newHead.x === food.x && newHead.y === food.y) {
+    var ate = food.x >= 0 && newHead.x === food.x && newHead.y === food.y;
+    if (!ate) snake.pop();
+    if (portalJump) placePortals();
+
+    if (ate) {
       playEatSound();
       score += 10;
       scoreEl.textContent = score;
@@ -600,8 +604,6 @@
         return;
       }
       placeBombs();
-    } else {
-      snake.pop();
     }
   }
 
