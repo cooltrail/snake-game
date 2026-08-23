@@ -439,7 +439,7 @@
     portalA = [];
     portalB = [];
     if (modeKey !== 'portal') return;
-    var len = Math.max(3, Math.floor(GRID_SIZE / 3));
+    var len = 1;
     var vertical = Math.random() < 0.5;
     var blocked = {};
     snake.forEach(function (s) { blocked[s.x + ',' + s.y] = true; });
@@ -564,12 +564,8 @@
       var hit = portalHit(newHead);
       if (hit) {
         var through = portalVertical ? direction.x !== 0 : direction.y !== 0;
-        if (!through) {
-          gameOver();
-          return;
-        }
         var from = portalHit(head);
-        if (!from || from.from !== hit.from) {
+        if (through && (!from || from.from !== hit.from)) {
           var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
           newHead = { x: dest.x, y: dest.y };
           portalJump = true;
@@ -611,9 +607,18 @@
 
   function drawPortalLine(cells) {
     if (!cells || cells.length === 0) return;
-    ctx.fillStyle = 'rgb(255, 10, 5)';
     cells.forEach(function (c) {
+      ctx.fillStyle = 'rgb(255, 10, 5)';
       ctx.fillRect(c.x * cellPx, c.y * cellPx, cellPx, cellPx);
+      ctx.fillStyle = 'rgb(120, 5, 2)';
+      var edge = Math.max(2, cellPx * 0.12);
+      if (portalVertical) {
+        ctx.fillRect(c.x * cellPx, c.y * cellPx, cellPx, edge);
+        ctx.fillRect(c.x * cellPx, (c.y + 1) * cellPx - edge, cellPx, edge);
+      } else {
+        ctx.fillRect(c.x * cellPx, c.y * cellPx, edge, cellPx);
+        ctx.fillRect((c.x + 1) * cellPx - edge, c.y * cellPx, edge, cellPx);
+      }
     });
   }
 
