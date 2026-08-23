@@ -107,6 +107,7 @@
   var portalA = [];
   var portalB = [];
   var portalJump = false;
+  var portalVertical = true;
   var score = 0;
   localStorage.removeItem('snake-best-score');
   var best = Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -466,6 +467,7 @@
       if (overlap) continue;
       portalA = a;
       portalB = b;
+      portalVertical = vertical;
       return;
     }
   }
@@ -560,15 +562,22 @@
 
     if (modeKey === 'portal') {
       var hit = portalHit(newHead);
-      var from = portalHit(head);
-      if (hit && (!from || from.from !== hit.from)) {
-        var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
-        newHead = { x: dest.x, y: dest.y };
-        portalJump = true;
-        playPortalSound();
-        if (snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })) {
+      if (hit) {
+        var through = portalVertical ? direction.x !== 0 : direction.y !== 0;
+        if (!through) {
           gameOver();
           return;
+        }
+        var from = portalHit(head);
+        if (!from || from.from !== hit.from) {
+          var dest = hit.from === 'a' ? portalB[hit.i] : portalA[hit.i];
+          newHead = { x: dest.x, y: dest.y };
+          portalJump = true;
+          playPortalSound();
+          if (snake.some(function (s) { return s.x === newHead.x && s.y === newHead.y; })) {
+            gameOver();
+            return;
+          }
         }
       }
     }
@@ -600,32 +609,12 @@
     }
   }
 
-  function drawPortalLine(cells, color) {
+  function drawPortalLine(cells) {
     if (!cells || cells.length === 0) return;
-    var a = cells[0];
-    var b = cells[cells.length - 1];
-    var x1 = a.x * cellPx + cellPx / 2;
-    var y1 = a.y * cellPx + cellPx / 2;
-    var x2 = b.x * cellPx + cellPx / 2;
-    var y2 = b.y * cellPx + cellPx / 2;
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = cellPx * 0.7;
-    ctx.lineWidth = cellPx * 0.28;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    ctx.shadowBlur = cellPx * 0.2;
-    ctx.lineWidth = cellPx * 0.1;
-    ctx.strokeStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    ctx.restore();
+    ctx.fillStyle = 'rgb(255, 10, 5)';
+    cells.forEach(function (c) {
+      ctx.fillRect(c.x * cellPx, c.y * cellPx, cellPx, cellPx);
+    });
   }
 
   function draw() {
@@ -643,8 +632,8 @@
       }
     }
 
-    drawPortalLine(portalA, '#00f6ff');
-    drawPortalLine(portalB, '#ff2bd6');
+    drawPortalLine(portalA);
+    drawPortalLine(portalB);
 
     ctx.fillStyle = '#f44336';
     var pad = cellPx * 0.15;
