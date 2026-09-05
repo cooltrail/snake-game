@@ -30,6 +30,8 @@
   var THEME_KEY = 'snake-theme';
   var BOMB_LEVEL_KEY = 'snake-bomb-level';
   var SOUND_KEY = 'snake-sound';
+  var FRUIT_KEY = 'snake-fruit';
+  var FRUIT_KINDS = ['apple', 'banana', 'orange', 'pineapple', 'strawberry'];
   var BOMB_LEVEL_SCALE = { easy: 0.45, normal: 1, mega: 2 };
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -60,6 +62,7 @@
   var modeKey = localStorage.getItem(MODE_KEY) || 'classic';
   var bombLevelKey = localStorage.getItem(BOMB_LEVEL_KEY) || 'normal';
   var soundKey = localStorage.getItem(SOUND_KEY) || 'arcade';
+  var fruitKey = localStorage.getItem(FRUIT_KEY) || 'apple';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
@@ -68,6 +71,7 @@
   if (modeKey !== 'ez' && modeKey !== 'bomb' && modeKey !== 'portal') modeKey = 'classic';
   if (bombLevelKey !== 'easy' && bombLevelKey !== 'mega') bombLevelKey = 'normal';
   if (soundKey !== 'space' && soundKey !== 'off') soundKey = 'arcade';
+  if (FRUIT_KINDS.indexOf(fruitKey) === -1 && fruitKey !== 'mix') fruitKey = 'apple';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -503,6 +507,7 @@
     mode: function () { return modeKey; },
     bombLevel: function () { return bombLevelKey; },
     sound: function () { return soundKey; },
+    fruit: function () { return fruitKey; },
   };
 
   function syncSettingButtons() {
@@ -552,6 +557,9 @@
       cell = randomCell();
     } while (occupied[cell.x + ',' + cell.y]);
     food = cell;
+    food.kind = fruitKey === 'mix'
+      ? FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)]
+      : fruitKey;
   }
 
   function placeBombs() {
@@ -818,6 +826,130 @@
     });
   }
 
+  function drawFood() {
+    if (food.x < 0) return;
+    var kind = food.kind || 'apple';
+    var x = food.x * cellPx;
+    var y = food.y * cellPx;
+    var s = cellPx;
+    ctx.save();
+    ctx.translate(x, y);
+    if (kind === 'banana') drawBanana(s);
+    else if (kind === 'orange') drawOrange(s);
+    else if (kind === 'pineapple') drawPineapple(s);
+    else if (kind === 'strawberry') drawStrawberry(s);
+    else drawApple(s);
+    ctx.restore();
+  }
+
+  function drawApple(s) {
+    var cx = s * 0.5;
+    var cy = s * 0.56;
+    ctx.fillStyle = '#e53935';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, s * 0.28, s * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5d4037';
+    ctx.fillRect(cx - s * 0.03, s * 0.16, s * 0.06, s * 0.16);
+    ctx.fillStyle = '#43a047';
+    ctx.beginPath();
+    ctx.ellipse(cx + s * 0.14, s * 0.24, s * 0.12, s * 0.07, -0.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBanana(s) {
+    ctx.strokeStyle = '#f9a825';
+    ctx.lineWidth = s * 0.18;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(s * 0.22, s * 0.32);
+    ctx.quadraticCurveTo(s * 0.18, s * 0.7, s * 0.55, s * 0.78);
+    ctx.quadraticCurveTo(s * 0.82, s * 0.72, s * 0.8, s * 0.42);
+    ctx.stroke();
+    ctx.strokeStyle = '#fdd835';
+    ctx.lineWidth = s * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(s * 0.26, s * 0.36);
+    ctx.quadraticCurveTo(s * 0.24, s * 0.64, s * 0.54, s * 0.7);
+    ctx.stroke();
+    ctx.fillStyle = '#6d4c41';
+    ctx.beginPath();
+    ctx.arc(s * 0.22, s * 0.3, s * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawOrange(s) {
+    var cx = s * 0.5;
+    var cy = s * 0.55;
+    ctx.fillStyle = '#fb8c00';
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 224, 130, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#43a047';
+    ctx.beginPath();
+    ctx.ellipse(cx + s * 0.08, s * 0.22, s * 0.1, s * 0.06, 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillRect(cx - s * 0.02, s * 0.18, s * 0.04, s * 0.1);
+  }
+
+  function drawPineapple(s) {
+    var cx = s * 0.5;
+    var cy = s * 0.58;
+    ctx.fillStyle = '#f9a825';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, s * 0.22, s * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ef6c00';
+    ctx.lineWidth = 1;
+    var i;
+    for (i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(cx - s * 0.16, cy + i * s * 0.1);
+      ctx.lineTo(cx + s * 0.16, cy + i * s * 0.1 + s * 0.08);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#43a047';
+    ctx.beginPath();
+    ctx.moveTo(cx, s * 0.08);
+    ctx.lineTo(cx - s * 0.12, s * 0.32);
+    ctx.lineTo(cx, s * 0.26);
+    ctx.lineTo(cx + s * 0.12, s * 0.32);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawStrawberry(s) {
+    var cx = s * 0.5;
+    ctx.fillStyle = '#e53935';
+    ctx.beginPath();
+    ctx.moveTo(cx, s * 0.82);
+    ctx.quadraticCurveTo(s * 0.12, s * 0.48, s * 0.22, s * 0.32);
+    ctx.lineTo(s * 0.78, s * 0.32);
+    ctx.quadraticCurveTo(s * 0.88, s * 0.48, cx, s * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff59d';
+    [[0.38, 0.48], [0.58, 0.46], [0.46, 0.6], [0.62, 0.62], [0.4, 0.7]].forEach(function (p) {
+      ctx.beginPath();
+      ctx.arc(s * p[0], s * p[1], s * 0.03, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillStyle = '#43a047';
+    ctx.beginPath();
+    ctx.moveTo(cx, s * 0.18);
+    ctx.lineTo(s * 0.28, s * 0.36);
+    ctx.lineTo(cx, s * 0.3);
+    ctx.lineTo(s * 0.72, s * 0.36);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   function draw() {
     renderFrame(1);
   }
@@ -835,14 +967,7 @@
 
     drawPortalLine(portalA);
     drawPortalLine(portalB);
-
-    ctx.fillStyle = '#f44336';
-    var pad = cellPx * 0.15;
-    ctx.beginPath();
-    ctx.roundRect
-      ? ctx.roundRect(food.x * cellPx + pad, food.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2, 6)
-      : ctx.rect(food.x * cellPx + pad, food.y * cellPx + pad, cellPx - pad * 2, cellPx - pad * 2);
-    ctx.fill();
+    drawFood();
 
     bombs.forEach(function (b) {
       var cx = b.x * cellPx + cellPx / 2;
@@ -1286,6 +1411,9 @@
         soundKey = btn.dataset.value;
         localStorage.setItem(SOUND_KEY, soundKey);
         playEatSound();
+      } else if (group === 'fruit') {
+        fruitKey = btn.dataset.value;
+        localStorage.setItem(FRUIT_KEY, fruitKey);
       }
       syncSettingButtons();
       resetGame();
