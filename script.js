@@ -858,33 +858,35 @@
   }
 
   function drawBanana(s) {
-    ctx.fillStyle = '#f9a825';
+    ctx.fillStyle = '#fbc02d';
     ctx.beginPath();
-    ctx.moveTo(s * 0.2, s * 0.26);
-    ctx.quadraticCurveTo(s * 0.05, s * 0.62, s * 0.42, s * 0.84);
-    ctx.quadraticCurveTo(s * 0.78, s * 0.88, s * 0.88, s * 0.5);
-    ctx.quadraticCurveTo(s * 0.9, s * 0.34, s * 0.78, s * 0.3);
-    ctx.quadraticCurveTo(s * 0.58, s * 0.58, s * 0.32, s * 0.5);
-    ctx.quadraticCurveTo(s * 0.22, s * 0.4, s * 0.22, s * 0.28);
+    ctx.moveTo(s * 0.16, s * 0.4);
+    ctx.quadraticCurveTo(s * 0.42, s * 0.2, s * 0.84, s * 0.38);
+    ctx.quadraticCurveTo(s * 0.92, s * 0.46, s * 0.84, s * 0.56);
+    ctx.quadraticCurveTo(s * 0.46, s * 0.82, s * 0.14, s * 0.54);
+    ctx.quadraticCurveTo(s * 0.1, s * 0.46, s * 0.16, s * 0.4);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#ffe082';
+    ctx.strokeStyle = '#f9a825';
+    ctx.lineWidth = Math.max(1, s * 0.03);
     ctx.beginPath();
-    ctx.moveTo(s * 0.28, s * 0.36);
-    ctx.quadraticCurveTo(s * 0.22, s * 0.58, s * 0.44, s * 0.72);
-    ctx.quadraticCurveTo(s * 0.52, s * 0.62, s * 0.4, s * 0.44);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(s * 0.28, s * 0.44);
+    ctx.quadraticCurveTo(s * 0.48, s * 0.5, s * 0.74, s * 0.46);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s * 0.3, s * 0.52);
+    ctx.quadraticCurveTo(s * 0.5, s * 0.58, s * 0.7, s * 0.54);
+    ctx.stroke();
     ctx.fillStyle = '#6d4c41';
     ctx.beginPath();
-    ctx.moveTo(s * 0.16, s * 0.2);
-    ctx.lineTo(s * 0.26, s * 0.22);
-    ctx.lineTo(s * 0.22, s * 0.32);
-    ctx.lineTo(s * 0.12, s * 0.28);
+    ctx.moveTo(s * 0.08, s * 0.32);
+    ctx.lineTo(s * 0.2, s * 0.34);
+    ctx.lineTo(s * 0.16, s * 0.44);
+    ctx.lineTo(s * 0.06, s * 0.4);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(s * 0.86, s * 0.48, s * 0.045, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.86, s * 0.48, s * 0.05, s * 0.035, 0.4, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -953,26 +955,37 @@
     var cx = s * 0.5;
     ctx.fillStyle = '#e53935';
     ctx.beginPath();
-    ctx.moveTo(cx, s * 0.82);
-    ctx.quadraticCurveTo(s * 0.12, s * 0.48, s * 0.22, s * 0.32);
-    ctx.lineTo(s * 0.78, s * 0.32);
-    ctx.quadraticCurveTo(s * 0.88, s * 0.48, cx, s * 0.82);
+    ctx.moveTo(s * 0.22, s * 0.4);
+    ctx.quadraticCurveTo(s * 0.18, s * 0.28, s * 0.34, s * 0.28);
+    ctx.quadraticCurveTo(cx, s * 0.24, s * 0.66, s * 0.28);
+    ctx.quadraticCurveTo(s * 0.82, s * 0.28, s * 0.78, s * 0.4);
+    ctx.quadraticCurveTo(s * 0.86, s * 0.56, cx, s * 0.86);
+    ctx.quadraticCurveTo(s * 0.14, s * 0.56, s * 0.22, s * 0.4);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = '#fff59d';
-    [[0.38, 0.48], [0.58, 0.46], [0.46, 0.6], [0.62, 0.62], [0.4, 0.7]].forEach(function (p) {
+    [
+      [0.36, 0.44], [0.5, 0.42], [0.64, 0.44],
+      [0.42, 0.56], [0.58, 0.56],
+      [0.5, 0.68],
+    ].forEach(function (p) {
       ctx.beginPath();
-      ctx.arc(s * p[0], s * p[1], s * 0.03, 0, Math.PI * 2);
+      ctx.arc(s * p[0], s * p[1], s * 0.028, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.fillStyle = '#43a047';
-    ctx.beginPath();
-    ctx.moveTo(cx, s * 0.18);
-    ctx.lineTo(s * 0.28, s * 0.36);
-    ctx.lineTo(cx, s * 0.3);
-    ctx.lineTo(s * 0.72, s * 0.36);
-    ctx.closePath();
-    ctx.fill();
+    var leaves = [-0.7, -0.35, 0, 0.35, 0.7];
+    leaves.forEach(function (ang) {
+      ctx.save();
+      ctx.translate(cx, s * 0.3);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-s * 0.06, -s * 0.08, 0, -s * 0.18);
+      ctx.quadraticCurveTo(s * 0.06, -s * 0.08, 0, 0);
+      ctx.fill();
+      ctx.restore();
+    });
   }
 
   function draw() {
