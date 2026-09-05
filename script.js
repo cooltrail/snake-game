@@ -858,35 +858,48 @@
   }
 
   function drawBanana(s) {
-    ctx.fillStyle = '#fbc02d';
+    function oneBanana(ox, rot) {
+      ctx.save();
+      ctx.translate(s * 0.5 + ox, s * 0.2);
+      ctx.rotate(rot);
+      ctx.fillStyle = '#ffe135';
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.07, s * 0.02);
+      ctx.quadraticCurveTo(-s * 0.18, s * 0.3, -s * 0.07, s * 0.6);
+      ctx.quadraticCurveTo(0, s * 0.7, s * 0.07, s * 0.6);
+      ctx.quadraticCurveTo(s * 0.18, s * 0.3, s * 0.07, s * 0.02);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#cddc39';
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.07, s * 0.02);
+      ctx.quadraticCurveTo(-s * 0.1, s * 0.12, -s * 0.04, s * 0.18);
+      ctx.lineTo(s * 0.04, s * 0.18);
+      ctx.quadraticCurveTo(s * 0.1, s * 0.12, s * 0.07, s * 0.02);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(210, 150, 20, 0.55)';
+      ctx.lineWidth = Math.max(1, s * 0.025);
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.1);
+      ctx.quadraticCurveTo(s * 0.05, s * 0.34, 0, s * 0.58);
+      ctx.stroke();
+      ctx.fillStyle = '#3e2723';
+      ctx.beginPath();
+      ctx.ellipse(0, s * 0.66, s * 0.045, s * 0.035, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    oneBanana(-s * 0.14, -0.38);
+    oneBanana(s * 0.14, 0.38);
+    oneBanana(0, 0);
+    ctx.fillStyle = '#6d5d3e';
     ctx.beginPath();
-    ctx.moveTo(s * 0.16, s * 0.4);
-    ctx.quadraticCurveTo(s * 0.42, s * 0.2, s * 0.84, s * 0.38);
-    ctx.quadraticCurveTo(s * 0.92, s * 0.46, s * 0.84, s * 0.56);
-    ctx.quadraticCurveTo(s * 0.46, s * 0.82, s * 0.14, s * 0.54);
-    ctx.quadraticCurveTo(s * 0.1, s * 0.46, s * 0.16, s * 0.4);
-    ctx.closePath();
+    ctx.ellipse(s * 0.5, s * 0.18, s * 0.16, s * 0.09, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#f9a825';
-    ctx.lineWidth = Math.max(1, s * 0.03);
+    ctx.fillStyle = '#8d7a4a';
     ctx.beginPath();
-    ctx.moveTo(s * 0.28, s * 0.44);
-    ctx.quadraticCurveTo(s * 0.48, s * 0.5, s * 0.74, s * 0.46);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(s * 0.3, s * 0.52);
-    ctx.quadraticCurveTo(s * 0.5, s * 0.58, s * 0.7, s * 0.54);
-    ctx.stroke();
-    ctx.fillStyle = '#6d4c41';
-    ctx.beginPath();
-    ctx.moveTo(s * 0.08, s * 0.32);
-    ctx.lineTo(s * 0.2, s * 0.34);
-    ctx.lineTo(s * 0.16, s * 0.44);
-    ctx.lineTo(s * 0.06, s * 0.4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(s * 0.86, s * 0.48, s * 0.05, s * 0.035, 0.4, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.5, s * 0.14, s * 0.08, s * 0.06, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
