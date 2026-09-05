@@ -29,6 +29,7 @@
   var MODE_KEY = 'snake-mode';
   var THEME_KEY = 'snake-theme';
   var BOMB_LEVEL_KEY = 'snake-bomb-level';
+  var SOUND_KEY = 'snake-sound';
   var BOMB_LEVEL_SCALE = { easy: 0.45, normal: 1, mega: 2 };
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -58,6 +59,7 @@
   var gridColorKey = localStorage.getItem(GRID_COLOR_KEY) || 'default';
   var modeKey = localStorage.getItem(MODE_KEY) || 'classic';
   var bombLevelKey = localStorage.getItem(BOMB_LEVEL_KEY) || 'normal';
+  var soundKey = localStorage.getItem(SOUND_KEY) || 'arcade';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
@@ -65,6 +67,7 @@
   if (!GRID_COLORS[gridColorKey]) gridColorKey = 'default';
   if (modeKey !== 'ez' && modeKey !== 'bomb' && modeKey !== 'portal') modeKey = 'classic';
   if (bombLevelKey !== 'easy' && bombLevelKey !== 'mega') bombLevelKey = 'normal';
+  if (soundKey !== 'space' && soundKey !== 'off') soundKey = 'arcade';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -116,14 +119,36 @@
   var paused = false;
   var loopHandle = null;
 
-  // --- Arcade Sound Effects (Web Audio API, no files needed) ---
+  // --- Sound packs (Web Audio API, no files needed) ---
   var audioCtx = null;
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
   }
 
-  function playEatSound() {
+  function playNoise(ctx, t, dur, gainVal, freq) {
+    var n = Math.floor(ctx.sampleRate * dur);
+    var buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    var i;
+    for (i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(freq || 1200, t);
+    filter.frequency.exponentialRampToValueAtTime(180, t + dur);
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(gainVal, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(t);
+    src.stop(t + dur);
+  }
+
+  function arcadeEat() {
     var ctx = getAudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
@@ -138,7 +163,7 @@
     osc.stop(ctx.currentTime + 0.12);
   }
 
-  function playDieSound() {
+  function arcadeDie() {
     var ctx = getAudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
@@ -153,7 +178,7 @@
     osc.stop(ctx.currentTime + 0.4);
   }
 
-  function playBombSound() {
+  function arcadeBomb() {
     var ctx = getAudioCtx();
     var t = ctx.currentTime;
     var osc = ctx.createOscillator();
@@ -181,7 +206,7 @@
     osc2.stop(t + 0.28);
   }
 
-  function playWinSound() {
+  function arcadeWin() {
     var ctx = getAudioCtx();
     var notes = [523, 659, 784, 1047];
     notes.forEach(function (freq, i) {
@@ -198,7 +223,7 @@
     });
   }
 
-  function playCountdownBeep(final) {
+  function arcadeCountdown(final) {
     var ctx = getAudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
@@ -212,7 +237,7 @@
     osc.stop(ctx.currentTime + 0.1);
   }
 
-  function playTurnSound() {
+  function arcadeTurn() {
     var ctx = getAudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
@@ -227,10 +252,9 @@
     osc.stop(ctx.currentTime + 0.04);
   }
 
-  function playPortalSound() {
+  function arcadePortal() {
     var ctx = getAudioCtx();
     var t = ctx.currentTime;
-
     var oscIn = ctx.createOscillator();
     var gainIn = ctx.createGain();
     oscIn.connect(gainIn);
@@ -255,6 +279,157 @@
     oscOut.start(t + 0.08);
     oscOut.stop(t + 0.22);
   }
+
+  function spaceEat() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1680, t);
+    osc.frequency.exponentialRampToValueAtTime(220, t + 0.11);
+    gain.gain.setValueAtTime(0.16, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
+
+  function spaceDie() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    playNoise(ctx, t, 0.35, 0.16, 900);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(240, t);
+    osc.frequency.exponentialRampToValueAtTime(36, t + 0.45);
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    osc.start(t);
+    osc.stop(t + 0.45);
+  }
+
+  function spaceBomb() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    playNoise(ctx, t, 0.42, 0.22, 1600);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(90, t);
+    osc.frequency.exponentialRampToValueAtTime(22, t + 0.4);
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
+  function spaceWin() {
+    var ctx = getAudioCtx();
+    var notes = [392, 523, 659, 784, 1046];
+    notes.forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.09);
+      gain.gain.setValueAtTime(0.13, ctx.currentTime + i * 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.09 + 0.28);
+      osc.start(ctx.currentTime + i * 0.09);
+      osc.stop(ctx.currentTime + i * 0.09 + 0.28);
+    });
+  }
+
+  function spaceCountdown(final) {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(final ? 990 : 660, t);
+    gain.gain.setValueAtTime(0.14, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  }
+
+  function spaceTurn() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(980, t);
+    osc.frequency.exponentialRampToValueAtTime(640, t + 0.035);
+    gain.gain.setValueAtTime(0.05, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  }
+
+  function spacePortal() {
+    var ctx = getAudioCtx();
+    var t = ctx.currentTime;
+    playNoise(ctx, t, 0.2, 0.1, 2200);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(80, t);
+    osc.frequency.exponentialRampToValueAtTime(920, t + 0.18);
+    osc.frequency.exponentialRampToValueAtTime(160, t + 0.32);
+    gain.gain.setValueAtTime(0.14, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+    osc.start(t);
+    osc.stop(t + 0.32);
+  }
+
+  var SOUND_FNS = {
+    arcade: {
+      eat: arcadeEat,
+      die: arcadeDie,
+      bomb: arcadeBomb,
+      win: arcadeWin,
+      countdown: arcadeCountdown,
+      turn: arcadeTurn,
+      portal: arcadePortal,
+    },
+    space: {
+      eat: spaceEat,
+      die: spaceDie,
+      bomb: spaceBomb,
+      win: spaceWin,
+      countdown: spaceCountdown,
+      turn: spaceTurn,
+      portal: spacePortal,
+    },
+  };
+
+  function playPack(name, arg) {
+    if (soundKey === 'off') return;
+    var pack = SOUND_FNS[soundKey] || SOUND_FNS.arcade;
+    pack[name](arg);
+  }
+
+  function playEatSound() { playPack('eat'); }
+  function playDieSound() { playPack('die'); }
+  function playBombSound() { playPack('bomb'); }
+  function playWinSound() { playPack('win'); }
+  function playCountdownBeep(final) { playPack('countdown', final); }
+  function playTurnSound() { playPack('turn'); }
+  function playPortalSound() { playPack('portal'); }
 
   function lerp(a, b, t) {
     return a + (b - a) * t;
@@ -327,6 +502,7 @@
     gridColor: function () { return gridColorKey; },
     mode: function () { return modeKey; },
     bombLevel: function () { return bombLevelKey; },
+    sound: function () { return soundKey; },
   };
 
   function syncSettingButtons() {
@@ -1106,6 +1282,10 @@
       } else if (group === 'bombLevel') {
         bombLevelKey = btn.dataset.value;
         localStorage.setItem(BOMB_LEVEL_KEY, bombLevelKey);
+      } else if (group === 'sound') {
+        soundKey = btn.dataset.value;
+        localStorage.setItem(SOUND_KEY, soundKey);
+        playEatSound();
       }
       syncSettingButtons();
       resetGame();
