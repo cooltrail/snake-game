@@ -858,23 +858,33 @@
   }
 
   function drawBanana(s) {
-    ctx.strokeStyle = '#f9a825';
-    ctx.lineWidth = s * 0.18;
-    ctx.lineCap = 'round';
+    ctx.fillStyle = '#f9a825';
     ctx.beginPath();
-    ctx.moveTo(s * 0.22, s * 0.32);
-    ctx.quadraticCurveTo(s * 0.18, s * 0.7, s * 0.55, s * 0.78);
-    ctx.quadraticCurveTo(s * 0.82, s * 0.72, s * 0.8, s * 0.42);
-    ctx.stroke();
-    ctx.strokeStyle = '#fdd835';
-    ctx.lineWidth = s * 0.1;
+    ctx.moveTo(s * 0.2, s * 0.26);
+    ctx.quadraticCurveTo(s * 0.05, s * 0.62, s * 0.42, s * 0.84);
+    ctx.quadraticCurveTo(s * 0.78, s * 0.88, s * 0.88, s * 0.5);
+    ctx.quadraticCurveTo(s * 0.9, s * 0.34, s * 0.78, s * 0.3);
+    ctx.quadraticCurveTo(s * 0.58, s * 0.58, s * 0.32, s * 0.5);
+    ctx.quadraticCurveTo(s * 0.22, s * 0.4, s * 0.22, s * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ffe082';
     ctx.beginPath();
-    ctx.moveTo(s * 0.26, s * 0.36);
-    ctx.quadraticCurveTo(s * 0.24, s * 0.64, s * 0.54, s * 0.7);
-    ctx.stroke();
+    ctx.moveTo(s * 0.28, s * 0.36);
+    ctx.quadraticCurveTo(s * 0.22, s * 0.58, s * 0.44, s * 0.72);
+    ctx.quadraticCurveTo(s * 0.52, s * 0.62, s * 0.4, s * 0.44);
+    ctx.closePath();
+    ctx.fill();
     ctx.fillStyle = '#6d4c41';
     ctx.beginPath();
-    ctx.arc(s * 0.22, s * 0.3, s * 0.05, 0, Math.PI * 2);
+    ctx.moveTo(s * 0.16, s * 0.2);
+    ctx.lineTo(s * 0.26, s * 0.22);
+    ctx.lineTo(s * 0.22, s * 0.32);
+    ctx.lineTo(s * 0.12, s * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(s * 0.86, s * 0.48, s * 0.045, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -900,10 +910,33 @@
 
   function drawPineapple(s) {
     var cx = s * 0.5;
-    var cy = s * 0.58;
+    var cy = s * 0.62;
+    var base = s * 0.4;
+    function leaf(angle, len, halfW, color) {
+      ctx.save();
+      ctx.translate(cx, base);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-halfW, -len * 0.4, 0, -len);
+      ctx.quadraticCurveTo(halfW, -len * 0.4, 0, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    leaf(-0.95, s * 0.24, s * 0.05, '#1b5e20');
+    leaf(0.95, s * 0.24, s * 0.05, '#1b5e20');
+    leaf(-0.65, s * 0.3, s * 0.055, '#2e7d32');
+    leaf(0.65, s * 0.3, s * 0.055, '#2e7d32');
+    leaf(-0.38, s * 0.34, s * 0.05, '#388e3c');
+    leaf(0.38, s * 0.34, s * 0.05, '#388e3c');
+    leaf(-0.16, s * 0.36, s * 0.045, '#43a047');
+    leaf(0.16, s * 0.36, s * 0.045, '#43a047');
+    leaf(0, s * 0.4, s * 0.048, '#66bb6a');
     ctx.fillStyle = '#f9a825';
     ctx.beginPath();
-    ctx.ellipse(cx, cy, s * 0.22, s * 0.28, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, s * 0.22, s * 0.26, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ef6c00';
     ctx.lineWidth = 1;
@@ -914,14 +947,6 @@
       ctx.lineTo(cx + s * 0.16, cy + i * s * 0.1 + s * 0.08);
       ctx.stroke();
     }
-    ctx.fillStyle = '#43a047';
-    ctx.beginPath();
-    ctx.moveTo(cx, s * 0.08);
-    ctx.lineTo(cx - s * 0.12, s * 0.32);
-    ctx.lineTo(cx, s * 0.26);
-    ctx.lineTo(cx + s * 0.12, s * 0.32);
-    ctx.closePath();
-    ctx.fill();
   }
 
   function drawStrawberry(s) {
