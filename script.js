@@ -31,9 +31,8 @@
   var BOMB_LEVEL_KEY = 'snake-bomb-level';
   var SOUND_KEY = 'snake-sound';
   var FRUIT_KEY = 'snake-fruit';
-  var FRUIT_SIZE_KEY = 'snake-fruit-size';
+  var FRUIT_COUNT_KEY = 'snake-fruit-count';
   var FRUIT_KINDS = ['apple', 'banana', 'orange', 'pineapple', 'strawberry'];
-  var FRUIT_SIZE_SCALE = { small: 1, medium: 1.5, mega: 2.5 };
   var BOMB_LEVEL_SCALE = { easy: 0.45, normal: 1, mega: 2 };
   var COUNTDOWN_STEPS = ['3', '2', '1', 'Go!'];
   var COUNTDOWN_TICK_MS = 700;
@@ -65,7 +64,7 @@
   var bombLevelKey = localStorage.getItem(BOMB_LEVEL_KEY) || 'normal';
   var soundKey = localStorage.getItem(SOUND_KEY) || 'arcade';
   var fruitKey = localStorage.getItem(FRUIT_KEY) || 'apple';
-  var fruitSizeKey = localStorage.getItem(FRUIT_SIZE_KEY) || 'medium';
+  var fruitCountKey = localStorage.getItem(FRUIT_COUNT_KEY) || 'small';
   if (!SPEEDS[speedKey]) speedKey = 'fast';
   if (!GRID_SIZES[gridKey]) gridKey = 'medium';
   if (!SKINS[skinKey]) skinKey = 'pixel';
@@ -75,7 +74,7 @@
   if (bombLevelKey !== 'easy' && bombLevelKey !== 'mega') bombLevelKey = 'normal';
   if (soundKey !== 'space' && soundKey !== 'off') soundKey = 'arcade';
   if (FRUIT_KINDS.indexOf(fruitKey) === -1 && fruitKey !== 'mix') fruitKey = 'apple';
-  if (fruitSizeKey !== 'small' && fruitSizeKey !== 'mega') fruitSizeKey = 'medium';
+  if (fruitCountKey !== 'medium' && fruitCountKey !== 'mega') fruitCountKey = 'small';
 
   var GRID_SIZE = GRID_SIZES[gridKey];
   var TICK_MS = SPEEDS[speedKey];
@@ -113,7 +112,7 @@
   var boostStart = 0;
   var direction = { x: 1, y: 0 };
   var pendingDirection = { x: 1, y: 0 };
-  var food = { x: 0, y: 0 };
+  var foods = [];
   var bombs = [];
   var portalA = [];
   var portalB = [];
@@ -512,7 +511,7 @@
     bombLevel: function () { return bombLevelKey; },
     sound: function () { return soundKey; },
     fruit: function () { return fruitKey; },
-    fruitSize: function () { return fruitSizeKey; },
+    fruitCount: function () { return fruitCountKey; },
   };
 
   function syncSettingButtons() {
@@ -547,24 +546,45 @@
     };
   }
 
-  function placeFood() {
+  function fruitTargetCount() {
+    if (fruitCountKey === 'mega') return Math.max(5, Math.round(GRID_SIZE / 2));
+    if (fruitCountKey === 'medium') return Math.max(2, Math.round(GRID_SIZE / 4));
+    return 1;
+  }
+
+  function markFoods(map) {
+    foods.forEach(function (f) { map[f.x + ',' + f.y] = true; });
+  }
+
+  function addFood() {
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
     bombs.forEach(function (b) { occupied[b.x + ',' + b.y] = true; });
     portalA.concat(portalB).forEach(function (p) { occupied[p.x + ',' + p.y] = true; });
+    markFoods(occupied);
     var totalCells = GRID_SIZE * GRID_SIZE;
-    if (Object.keys(occupied).length >= totalCells) {
-      food = { x: -1, y: -1 };
-      return;
-    }
+    if (Object.keys(occupied).length >= totalCells) return false;
     var cell;
+    var guard = 0;
     do {
       cell = randomCell();
-    } while (occupied[cell.x + ',' + cell.y]);
-    food = cell;
-    food.kind = fruitKey === 'mix'
+      guard++;
+    } while (occupied[cell.x + ',' + cell.y] && guard < 200);
+    if (occupied[cell.x + ',' + cell.y]) return false;
+    cell.kind = fruitKey === 'mix'
       ? FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)]
       : fruitKey;
+    foods.push(cell);
+    return true;
+  }
+
+  function placeFood() {
+    foods = [];
+    var target = fruitTargetCount();
+    var i;
+    for (i = 0; i < target; i++) {
+      if (!addFood()) break;
+    }
   }
 
   function placeBombs() {
@@ -575,7 +595,7 @@
     var count = Math.max(1, Math.round(normal * scale));
     var occupied = {};
     snake.forEach(function (s) { occupied[s.x + ',' + s.y] = true; });
-    if (food.x >= 0) occupied[food.x + ',' + food.y] = true;
+    markFoods(occupied);
     var hx = snake[0] ? snake[0].x : 0;
     var hy = snake[0] ? snake[0].y : 0;
     var dx = pendingDirection.x;
@@ -646,7 +666,7 @@
     var vertical = Math.random() < 0.5;
     var blocked = {};
     snake.forEach(function (s) { blocked[s.x + ',' + s.y] = true; });
-    if (food.x >= 0) blocked[food.x + ',' + food.y] = true;
+    markFoods(blocked);
     var mid = Math.floor(GRID_SIZE / 2);
     for (var x = 0; x <= 4; x++) blocked[x + ',' + mid] = true;
     var half = Math.floor(GRID_SIZE / 2);
@@ -697,7 +717,7 @@
     portalNeedsClose = false;
     score = 0;
     scoreEl.textContent = score;
-    food = { x: -1, y: -1 };
+    foods = [];
     placePortals();
     placeFood();
     placeBombs();
@@ -791,14 +811,22 @@
 
     snake.unshift(newHead);
 
-    var ate = food.x >= 0 && newHead.x === food.x && newHead.y === food.y;
-    if (!ate) snake.pop();
+    var ateAt = -1;
+    var i;
+    for (i = 0; i < foods.length; i++) {
+      if (foods[i].x === newHead.x && foods[i].y === newHead.y) {
+        ateAt = i;
+        break;
+      }
+    }
+    if (ateAt < 0) snake.pop();
     if (portalNeedsClose && !snakeStillInPortal()) {
       portalNeedsClose = false;
       placePortals();
     }
 
-    if (ate) {
+    if (ateAt >= 0) {
+      foods.splice(ateAt, 1);
       playEatSound();
       score += 10;
       scoreEl.textContent = score;
@@ -807,8 +835,7 @@
         bestScoreEl.textContent = best;
         localStorage.setItem(BEST_KEY, String(best));
       }
-      placeFood();
-      if (food.x < 0) {
+      if (!addFood() && foods.length === 0) {
         gridWin();
         return;
       }
@@ -832,20 +859,18 @@
   }
 
   function drawFood() {
-    if (food.x < 0) return;
-    var kind = food.kind || 'apple';
-    var scale = FRUIT_SIZE_SCALE[fruitSizeKey] || 1.5;
-    var s = cellPx * scale;
-    var x = food.x * cellPx + (cellPx - s) / 2;
-    var y = food.y * cellPx + (cellPx - s) / 2;
-    ctx.save();
-    ctx.translate(x, y);
-    if (kind === 'banana') drawBanana(s);
-    else if (kind === 'orange') drawOrange(s);
-    else if (kind === 'pineapple') drawPineapple(s);
-    else if (kind === 'strawberry') drawStrawberry(s);
-    else drawApple(s);
-    ctx.restore();
+    var s = cellPx;
+    foods.forEach(function (food) {
+      var kind = food.kind || 'apple';
+      ctx.save();
+      ctx.translate(food.x * cellPx, food.y * cellPx);
+      if (kind === 'banana') drawBanana(s);
+      else if (kind === 'orange') drawOrange(s);
+      else if (kind === 'pineapple') drawPineapple(s);
+      else if (kind === 'strawberry') drawStrawberry(s);
+      else drawApple(s);
+      ctx.restore();
+    });
   }
 
   function drawApple(s) {
@@ -1423,9 +1448,9 @@
       } else if (group === 'fruit') {
         fruitKey = btn.dataset.value;
         localStorage.setItem(FRUIT_KEY, fruitKey);
-      } else if (group === 'fruitSize') {
-        fruitSizeKey = btn.dataset.value;
-        localStorage.setItem(FRUIT_SIZE_KEY, fruitSizeKey);
+      } else if (group === 'fruitCount') {
+        fruitCountKey = btn.dataset.value;
+        localStorage.setItem(FRUIT_COUNT_KEY, fruitCountKey);
       }
       syncSettingButtons();
       resetGame();
