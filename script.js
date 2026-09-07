@@ -974,7 +974,10 @@
 
   function drawStrawberry(s) {
     ctx.save();
-    ctx.scale(s / 36, s / 36);
+    var scale = (s * 0.58) / 36;
+    ctx.translate(s * 0.5, s * 0.52);
+    ctx.scale(scale, scale);
+    ctx.translate(-18, -18);
     ctx.fillStyle = '#be1931';
     ctx.fill(new Path2D('M22.614 34.845c3.462-1.154 6.117-3.034 6.12-9.373C28.736 21.461 33 17 32.999 12.921 32.998 9 28.384 2.537 17.899 3.635 7.122 4.764 3 8 2.999 15.073c0 4.927 5.304 8.381 8.127 13.518C13 32 18.551 38.187 22.614 34.845z'));
     ctx.fillStyle = '#77b255';
