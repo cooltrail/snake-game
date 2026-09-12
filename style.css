@@ -49,20 +49,17 @@ html, body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  height: 100dvh;
-  padding: 0.45rem 0.6rem 0.35rem;
-  gap: 0.4rem;
-  overflow: hidden;
+  padding: 1rem;
+  gap: 1rem;
 }
 
 .topbar {
-  width: min(96vw, calc(100dvh - 5.6rem));
-  max-width: none;
+  width: 100%;
+  max-width: 440px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-right: 4.25rem;
-  flex-shrink: 0;
 }
 
 .logo {
@@ -105,10 +102,9 @@ html, body {
 
 .board-wrap {
   position: relative;
-  width: min(96vw, calc(100dvh - 5.6rem));
-  max-width: none;
+  width: 100%;
+  max-width: 440px;
   aspect-ratio: 1 / 1;
-  flex: 0 0 auto;
 }
 
 #board {
@@ -136,7 +132,6 @@ html, body {
 
 .overlay-card {
   width: 100%;
-  max-width: 520px;
   padding: 0;
 }
 
@@ -327,10 +322,9 @@ html, body {
 
 .controls {
   width: 100%;
-  max-width: min(96vw, calc(100dvh - 5.6rem));
+  max-width: 440px;
   display: flex;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .dpad {
@@ -370,10 +364,9 @@ html, body {
 
 .hint {
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   text-align: center;
-  max-width: min(96vw, calc(100dvh - 5.6rem));
-  flex-shrink: 0;
+  max-width: 440px;
 }
 
 .theme-btn {
@@ -391,23 +384,21 @@ html, body {
   cursor: pointer;
 }
 
-@media (max-width: 699px) {
-  .app {
-    height: auto;
-    min-height: 100dvh;
-    overflow: auto;
+@media (min-width: 700px) {
+  .dpad {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  html {
+    font-size: 200%;
   }
 
   .topbar,
   .board-wrap,
   .controls,
   .hint {
-    width: min(96vw, calc(100dvh - 15.5rem));
-  }
-}
-
-@media (min-width: 700px) {
-  .dpad {
-    display: none;
+    max-width: 880px;
   }
 }
